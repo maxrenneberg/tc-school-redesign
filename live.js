@@ -122,15 +122,49 @@
     if(!st.gid)st.gid=classes[0].gid;
     var opts=classes.map(function(c){return '<option value="'+c.gid+'"'+(c.gid===st.gid?' selected':'')+'>'+c.name+'</option>';}).join('');
     b.innerHTML=hd('Students','Tick a student to put them in a class, untick to take them out — saves to your account.',true)
-      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-flask" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5"><strong style="font-weight:500">Newly wired (beta).</strong> Toggling a student adds or removes them from this class for real. Inviting brand-new students is still <span class="pill prev">preview</span>.</span></div>'
+      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-flask" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5"><strong style="font-weight:500">Newly wired (beta).</strong> Toggling a student adds or removes them from this class. You can also invite new students by link or email — they join your school, then you tick them into a class.</span></div>'
       +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span style="font-size:14px">Class '+qm('Students ticked here are in this class. Untick to remove them — they stay in your school.')+'</span><select id="st-cls">'+opts+'</select><span id="st-count" style="font-size:13px;color:var(--ts)"></span><button id="st-rl" style="font-size:12px;padding:6px 10px">Refresh</button><button class="p" id="st-add" style="margin-left:auto">+ Add students</button></div>'
+      +'<div id="st-addpanel" style="display:none;background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:12px"></div>'
       +'<input id="st-q" placeholder="Search students" style="width:100%;margin-bottom:8px"/>'
       +'<div id="st-area" style="color:var(--ts)">Reading this class’s students…</div>';
     b.querySelector('#st-cls').onchange=function(e){st.gid=e.target.value;st.rows=[];loadClassStudents();};
     b.querySelector('#st-rl').onclick=function(){st.rows=[];loadClassStudents();};
     b.querySelector('#st-q').oninput=function(e){st.q=e.target.value.toLowerCase().trim();paintStudentRows();};
-    b.querySelector('#st-add').onclick=function(){prev('Inviting brand-new students');};
+    b.querySelector('#st-add').onclick=function(){st.add=!st.add;renderAddPanel();};
+    renderAddPanel();
     loadClassStudents();
+  }
+  function renderAddPanel(){
+    var p=document.querySelector('#ts-students #st-addpanel'); if(!p)return;
+    if(!st.add){p.style.display='none';p.innerHTML='';return;}
+    p.style.display='block';
+    p.innerHTML='<div style="font-size:14px;font-weight:500;margin-bottom:4px">Invite students to your school '+qm('New students join your school here. Once they appear in the list below, tick them into a class.')+'</div>'
+      +'<div style="font-size:12px;color:var(--tt);margin-bottom:12px">They join your school first, then you tick them into a class above.</div>'
+      +'<div style="font-size:13px;margin-bottom:5px">1. Share this link with your class</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"><input id="st-link" readonly placeholder="loading link…" style="flex:1;min-width:200px"/><button id="st-copy">Copy link</button></div>'
+      +'<div style="font-size:13px;margin-bottom:5px">2. Or invite one by email or nickname</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="st-iname" placeholder="email address or nickname" style="flex:1;min-width:200px"/><button class="p" id="st-isend">Send invite</button></div>';
+    p.querySelector('#st-copy').onclick=function(){var i=p.querySelector('#st-link');if(!i.value){toast('Link still loading');return;}i.select();try{navigator.clipboard.writeText(i.value);}catch(e){}toast('Invite link copied');};
+    p.querySelector('#st-isend').onclick=function(){
+      var v=(p.querySelector('#st-iname').value||'').trim(); if(!v){toast('Enter an email or nickname');return;}
+      var btn=p.querySelector('#st-isend'); btn.disabled=true; btn.textContent='Sending…';
+      var bd=new URLSearchParams({rAp:rAp,xreg:'1',addName:v});
+      fetch(base+'friendsProcess.php',{method:'POST',credentials:'include',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:bd}).then(function(res){
+        if(!res.ok)throw new Error('status '+res.status);
+        toast('Invite sent to '+v); p.querySelector('#st-iname').value=''; btn.disabled=false; btn.textContent='Send invite';
+      }).catch(function(e){toast('Failed: '+e.message); btn.disabled=false; btn.textContent='Send invite';});
+    };
+    loadInviteLink();
+  }
+  function loadInviteLink(){
+    var fill=function(){var i=document.querySelector('#ts-students #st-link');if(i&&st.invite)i.value=st.invite;};
+    if(st.invite){fill();return;}
+    fetch(base+'friendsInvitation.php?returnFile=friendsOrganize',{credentials:'include'}).then(function(r){return r.text();}).then(function(html){
+      var d=new DOMParser().parseFromString(html,'text/html'); var l=d.querySelector('input[name="inviteLink"],#inviteLink');
+      st.invite=l?(l.getAttribute('value')||l.value||''):'';
+      var i=document.querySelector('#ts-students #st-link');
+      if(i){if(st.invite)i.value=st.invite; else i.placeholder='Open the Invite page in trainchinese for the link';}
+    }).catch(function(){var i=document.querySelector('#ts-students #st-link');if(i)i.placeholder='Could not load link';});
   }
   function loadClassStudents(){
     teardownSt();
