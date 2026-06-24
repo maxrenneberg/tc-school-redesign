@@ -31,15 +31,20 @@
   input[type=checkbox]{height:auto; accent-color:#9E2A2A;}
   label{line-height:1.4;}
   .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;}
-  #toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--color-text-primary); color:var(--color-background-primary); padding:11px 17px; border-radius:var(--border-radius-md); font-size:13px; opacity:0; pointer-events:none; transition:.2s; z-index:50; max-width:90%;}
+  #toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--color-text-primary); color:var(--color-background-primary); padding:11px 17px; border-radius:var(--border-radius-md); font-size:13px; opacity:0; pointer-events:none; transition:.2s; z-index:80; max-width:90%;}
   #toast.on{opacity:1; transform:translateX(-50%) translateY(0);}
   .demo-banner{max-width:1080px; margin:0 auto; padding:10px 22px; font-size:13px; color:var(--color-text-secondary); text-align:center; display:flex; gap:8px; align-items:center; justify-content:center;}
+  .qm{display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%; border:1px solid var(--color-border-secondary); color:var(--color-text-tertiary); font-size:11px; font-weight:500; line-height:1; margin-left:5px; cursor:help; position:relative; vertical-align:middle; user-select:none; flex-shrink:0;}
+  .qm:hover,.qm:focus{color:#fff; background:#9E2A2A; border-color:#9E2A2A; outline:none;}
+  .qm .tip{position:absolute; bottom:calc(100% + 9px); left:50%; transform:translateX(-50%); width:230px; max-width:62vw; background:var(--color-text-primary); color:var(--color-background-primary); font-size:12px; font-weight:400; line-height:1.5; text-align:left; padding:9px 11px; border-radius:8px; opacity:0; visibility:hidden; transition:opacity .12s; z-index:70; pointer-events:none;}
+  .qm .tip::after{content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:var(--color-text-primary);}
+  .qm:hover .tip,.qm:focus .tip{opacity:1; visibility:visible;}
 </style>
 </head>
 <body>
-<div class="demo-banner"><i class="ti ti-eye" aria-hidden="true"></i><span>This is a preview of the new school settings &mdash; click around freely. Nothing you change here is saved.</span></div>
+<div class="demo-banner"><i class="ti ti-eye" aria-hidden="true"></i><span>This is a preview of the new school settings &mdash; click around freely. Nothing you change here is saved. Hover the <span class="qm" tabindex="0" aria-label="example help">?<span class="tip">Like this! A small question mark sits next to every setting. Hover or tap it to see what the setting does.</span></span> marks for help.</span></div>
 <div class="wrap">
-<h2 class="sr-only">Redesigned trainchinese school settings, written in plain language for non-technical school admins.</h2>
+<h2 class="sr-only">Redesigned trainchinese school settings, written in plain language with a help tooltip on every setting.</h2>
 <div style="font-family:var(--font-sans); color:var(--color-text-primary); display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;">
 
   <aside id="side" style="flex:0 0 178px; position:sticky; top:16px;">
@@ -85,27 +90,29 @@
   const body=id=>document.querySelector('#s-'+id+' .body');
   const hd=(t,s)=>`<div style="margin-bottom:14px;"><div style="font-size:17px; font-weight:500;">${t}</div>${s?`<div style="font-size:14px; color:var(--color-text-secondary); margin-top:3px; line-height:1.5;">${s}</div>`:''}</div>`;
   const note=(txt)=>`<div style="display:flex; gap:9px; background:var(--color-background-info); border-radius:var(--border-radius-md); padding:11px 13px; margin-bottom:16px;"><i class="ti ti-info-circle" style="font-size:17px; color:var(--color-text-info); flex-shrink:0; margin-top:1px;" aria-hidden="true"></i><span style="font-size:13px; color:var(--color-text-info); line-height:1.5;">${txt}</span></div>`;
-  const hint=(txt)=>`<div style="font-size:12px; color:var(--color-text-tertiary); margin-top:5px; line-height:1.45;">${txt}</div>`;
+  const qm=(t)=>{const plain=String(t).replace(/<[^>]+>/g,'').replace(/&[a-z]+;/g,' ').replace(/"/g,'').trim();return `<span class="qm" tabindex="0" role="button" aria-label="More information: ${plain}">?<span class="tip">${t}</span></span>`;};
   const tile=(l,v,warn,sub)=>`<div style="background:${warn?'var(--color-background-warning)':'var(--color-background-secondary)'}; border-radius:var(--border-radius-md); padding:12px 14px;"><div style="font-size:12px; color:var(--color-text-secondary);">${l}</div><div style="font-size:24px; font-weight:500; margin-top:2px; color:${warn?'var(--color-text-warning)':'inherit'};">${v}</div>${sub?`<div style="font-size:11px; color:var(--color-text-tertiary); margin-top:1px;">${sub}</div>`:''}</div>`;
   const bar=(p,col)=>`<div style="height:10px; background:var(--color-border-tertiary); border-radius:5px; overflow:hidden;"><div style="height:100%; width:${p}%; background:${col};"></div></div>`;
-  const switchRow=(title,desc,attr,checked)=>`<label style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding:12px 0; border-bottom:0.5px solid var(--color-border-tertiary); cursor:pointer;"><span style="min-width:0;"><span style="font-size:14px; display:block;">${title}</span><span style="font-size:12px; color:var(--color-text-tertiary); display:block; margin-top:2px; line-height:1.45;">${desc}</span></span><input type="checkbox" ${attr} ${checked?'checked':''} style="width:19px; height:19px; flex-shrink:0; margin-top:2px;"/></label>`;
+  const switchRow=(title,desc,attr,checked)=>`<div style="display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><span style="font-size:14px;">${title} ${qm(desc)}</span><input type="checkbox" ${attr} ${checked?'checked':''} style="width:19px; height:19px; flex-shrink:0;"/></div>`;
 
   // ===== SCHOOL =====
   const sp={name:'Riverview',type:'Riverview Primary School',students:280,chars:'Simplified',textbooks:'Not set'};
+  const profQ={name:'The name students and teachers see in the app.',type:'For your own records. Students do not see this.',students:'Roughly how many students you have. This does not limit anything.',textbooks:'Optional. If you tell us your textbook, we can suggest matching word lists.'};
+  const charQ='Simplified is used in mainland China and Singapore. Traditional is used in Taiwan, Hong Kong and Macau. Pick one, or let each student choose.';
   function profile(edit){
-    const b=body('profile'); const rows=[['School name','name','The name students and teachers see.'],['School type','type','For your records only.'],['Number of students','students','Roughly how many you have. This does not limit anything.'],['Textbooks used','textbooks','Optional. Helps us suggest matching word lists.']];
+    const b=body('profile'); const rows=[['School name','name'],['School type','type'],['Number of students','students'],['Textbooks used','textbooks']];
     if(!edit){
       b.innerHTML=hd('Your school','Basic details about your school. Only the school name is shown to students &mdash; the rest is just for your records.')+
       `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px;">
-        ${rows.map(([l,k])=>`<div><div style="font-size:13px; color:var(--color-text-secondary);">${l}</div><div style="font-size:15px; margin-top:2px;">${sp[k]}</div></div>`).join('')}
-        <div><div style="font-size:13px; color:var(--color-text-secondary);">Character style</div><div style="margin-top:4px;"><span style="font-size:13px; background:var(--color-background-secondary); padding:3px 10px; border-radius:var(--border-radius-md);">${sp.chars} Chinese</span></div></div>
+        ${rows.map(([l,k])=>`<div><div style="font-size:13px; color:var(--color-text-secondary);">${l} ${qm(profQ[k])}</div><div style="font-size:15px; margin-top:2px;">${sp[k]}</div></div>`).join('')}
+        <div><div style="font-size:13px; color:var(--color-text-secondary);">Character style ${qm(charQ)}</div><div style="margin-top:4px;"><span style="font-size:13px; background:var(--color-background-secondary); padding:3px 10px; border-radius:var(--border-radius-md);">${sp.chars} Chinese</span></div></div>
       </div><button id="e" style="margin-top:18px; font-size:14px;"><i class="ti ti-edit" style="font-size:16px; vertical-align:-3px; margin-right:6px;" aria-hidden="true"></i>Edit these details</button>`;
       b.querySelector('#e').onclick=()=>profile(true);
     } else {
       b.innerHTML=hd('Your school','Editing &mdash; remember to press Save when you are done.')+
       `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px;">
-        ${rows.map(([l,k,h])=>`<div><label style="font-size:13px; color:var(--color-text-secondary);">${l}</label><input data-k="${k}" value="${sp[k]}" style="width:100%; margin-top:4px;"/>${hint(h)}</div>`).join('')}
-        <div><label style="font-size:13px; color:var(--color-text-secondary);">Character style</label><select data-k="chars" style="width:100%; margin-top:4px;"><option ${sp.chars==='Simplified'?'selected':''}>Simplified</option><option ${sp.chars==='Traditional'?'selected':''}>Traditional</option></select>${hint('Simplified is used in mainland China and Singapore. Traditional is used in Taiwan, Hong Kong and Macau.')}</div>
+        ${rows.map(([l,k])=>`<div><label style="font-size:13px; color:var(--color-text-secondary);">${l} ${qm(profQ[k])}</label><input data-k="${k}" value="${sp[k]}" style="width:100%; margin-top:4px;"/></div>`).join('')}
+        <div><label style="font-size:13px; color:var(--color-text-secondary);">Character style ${qm(charQ)}</label><select data-k="chars" style="width:100%; margin-top:4px;"><option ${sp.chars==='Simplified'?'selected':''}>Simplified</option><option ${sp.chars==='Traditional'?'selected':''}>Traditional</option></select></div>
       </div><div style="margin-top:18px; display:flex; gap:8px;"><button id="sv" style="font-size:14px; ${btnP}">Save changes</button><button id="cn" style="font-size:14px;">Cancel</button></div>`;
       b.querySelector('#sv').onclick=()=>{b.querySelectorAll('[data-k]').forEach(i=>sp[i.dataset.k]=i.value);profile(false);sendPrompt('Saved (demo)');};
       b.querySelector('#cn').onclick=()=>profile(false);
@@ -117,7 +124,7 @@
   const classList=['P2-A','P2-I','P2-J','P2-R','P2-S','P2-T','P1-S','P1-A','P1-J','P1-R','P1-T'];
   const wopts={chineseType:['Let students choose','Simplified characters only','Traditional characters only'],romanization:['Let students choose','Pinyin with tone marks  (nǐ hǎo)','Pinyin with numbers  (ni3 hao3)','Zhuyin / Bopomofo  (ㄋㄧˇ)'],customPacks:['Let students make their own word sets','Keep students on my lists only'],login:['Keep every login button','Hide logins of students who left']};
   const wlabel={chineseType:'Which characters students see',romanization:'Pronunciation guide',customPacks:'Student-made word sets',login:'Old student logins'};
-  const whint={chineseType:'Most schools choose Simplified. Pick &ldquo;Let students choose&rdquo; if you are unsure.',romanization:'The spelling that shows how to say a word. Pinyin with tone marks is the usual choice.',customPacks:'Turn this off if everyone should study only the lists you pick.',login:'Tidies up the login screen by hiding students who have left.'};
+  const whint={chineseType:'Most schools choose Simplified. Pick &ldquo;Let students choose&rdquo; if you are unsure.',romanization:'The spelling that shows how to say a word. Pinyin with tone marks (like nǐ hǎo) is the usual choice; Zhuyin is used mainly in Taiwan.',customPacks:'A custom word set is one a student builds themselves. Turn this off if everyone should study only the lists you pick.',login:'Tidies up the login screen by hiding one-tap login buttons of students who have left your school.'};
   const writer={chineseType:1,romanization:1,customPacks:1,login:1,shareNotes:false,studentLists:false};
   const catalog=[];
   for(let i=19;i>=11;i--)catalog.push({n:'2B Unit '+i,shared:i>14});
@@ -132,19 +139,18 @@
     b.innerHTML=hd('Word lists','Choose which Chinese word lists each class studies. Add a list and it appears in your students&rsquo; app for them to learn.')+
     note('Each class is set up separately. First pick a class below, then tick the lists you want it to study.')+
     `<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
-      <span style="font-size:14px;">Set up this class:</span>
+      <span style="font-size:14px;">Set up this class: ${qm('Every class has its own word lists and display settings, so you can give different classes different work.')}</span>
       <select id="cls" style="font-weight:500;">${classList.map(c=>`<option ${c===curClass?'selected':''}>${c}</option>`).join('')}</select>
       <span style="font-size:13px; color:var(--color-text-secondary);"><span id="sc">${sharedNow}</span> of ${catalog.length} lists added</span>
     </div>
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
-      <div style="font-size:15px; font-weight:500;">Lists for <span id="cn2">${curClass}</span></div>
-      <div style="display:flex; align-items:center; gap:8px;"><span style="font-size:12px; color:var(--color-text-tertiary);">Order students see them</span><div style="display:inline-flex; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+      <div style="font-size:15px; font-weight:500;">Lists for <span id="cn2">${curClass}</span> ${qm('Tick a list to add it to this class &mdash; it then shows up in your students&rsquo; app. Untick to remove it; students keep what they have already learned.')}</div>
+      <div style="display:flex; align-items:center; gap:8px;"><span style="font-size:12px; color:var(--color-text-tertiary);">Order ${qm('Choose the order word lists appear to your students in the app.')}</span><div style="display:inline-flex; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); overflow:hidden;">
         <button class="ord" data-o="priority" style="border:none; border-radius:0; font-size:12px; padding:6px 11px; ${order==='priority'?'background:var(--color-background-secondary);':''}">My order</button>
         <button class="ord" data-o="abc" style="border:none; border-radius:0; font-size:12px; padding:6px 11px; ${order==='abc'?'background:var(--color-background-secondary);':''}">A&ndash;Z</button>
       </div></div>
     </div>
-    ${hint('Tick a list to add it to this class. Untick to remove it &mdash; students keep what they have already learned.')}
-    <input id="lq" placeholder="Search word lists" style="width:100%; margin:10px 0 8px;"/>
+    <input id="lq" placeholder="Search word lists" style="width:100%; margin:8px 0;"/>
     <div style="display:flex; gap:8px; margin-bottom:6px; flex-wrap:wrap;"><button id="shareall" style="font-size:13px;"><i class="ti ti-checks" style="font-size:15px; vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Add all shown</button><button id="assign" style="font-size:13px;"><i class="ti ti-copy" style="font-size:15px; vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Copy these to another class&hellip;</button></div>
     <div id="ll"></div>
     <div style="margin-top:20px; border-top:0.5px solid var(--color-border-tertiary); padding-top:14px;">
@@ -155,11 +161,11 @@
       </button>
       <div id="adv" style="display:${advOpen?'block':'none'}; margin-top:14px;">
         <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;">
-          ${Object.keys(wopts).map(k=>`<div><label style="font-size:14px;">${wlabel[k]}</label><select data-w="${k}" style="width:100%; margin-top:5px;">${wopts[k].map((o,i)=>`<option ${i===writer[k]?'selected':''}>${o}</option>`).join('')}</select>${hint(whint[k])}</div>`).join('')}
+          ${Object.keys(wopts).map(k=>`<div><label style="font-size:14px;">${wlabel[k]} ${qm(whint[k])}</label><select data-w="${k}" style="width:100%; margin-top:5px;">${wopts[k].map((o,i)=>`<option ${i===writer[k]?'selected':''}>${o}</option>`).join('')}</select></div>`).join('')}
         </div>
         <div style="margin-top:14px;">
-          ${switchRow('Share my notes with this class','Students will see any notes you add to a word.','data-t="shareNotes"',writer.shareNotes)}
-          ${switchRow('Let students add their own word lists','If off, only you decide what this class studies.','data-t="studentLists"',writer.studentLists)}
+          ${switchRow('Share my notes with this class','Any notes you add to a word will be visible to students in this class.','data-t="shareNotes"',writer.shareNotes)}
+          ${switchRow('Let students add their own word lists','If off, only you decide what this class studies. If on, students can add lists too.','data-t="studentLists"',writer.studentLists)}
         </div>
       </div>
     </div>`;
@@ -169,7 +175,7 @@
       ll.innerHTML=cat.map(c=>{const idx=catalog.indexOf(c);return `<div data-n="${c.n.toLowerCase()}" style="display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:0.5px solid var(--color-border-tertiary);">
         <label style="display:inline-flex; align-items:center; cursor:pointer;"><input type="checkbox" data-idx="${idx}" ${c.shared?'checked':''} style="width:19px; height:19px;"/></label>
         <span style="flex:1; font-size:14px;">${c.n}</span>
-        <span class="sl" style="font-size:12px; color:${c.shared?'var(--color-text-success)':'var(--color-text-tertiary)'}; min-width:74px; text-align:right;">${c.shared?'In this class':'Not added'}</span>
+        <span class="sl" style="font-size:12px; color:${c.shared?'var(--color-text-success)':'var(--color-text-tertiary)'}; min-width:80px; text-align:right;">${c.shared?'In this class':'Not added'}</span>
         <button class="pv" style="font-size:12px; padding:5px 10px;">View words</button>
       </div>`;}).join('');
       ll.querySelectorAll('[data-idx]').forEach(cb=>cb.onchange=()=>{const it=catalog[+cb.dataset.idx];it.shared=cb.checked;const lab=cb.closest('[data-n]').querySelector('.sl');lab.textContent=cb.checked?'In this class':'Not added';lab.style.color=cb.checked?'var(--color-text-success)':'var(--color-text-tertiary)';b.querySelector('#sc').textContent=catalog.filter(c=>c.shared).length;});
@@ -209,20 +215,19 @@
     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:10px; margin:18px 0;">
       ${tile('You have',active.total,false,'in total')}${tile('In use',active.used,false,'by students')}${tile('Still free',active.avail,true,'to give out')}
     </div>
-    <div style="font-size:15px; font-weight:500; margin:6px 0 4px;">Subscriptions used by each class</div>
-    ${hint('How many students in each class are using a subscription.')}
-    <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+    <div style="font-size:15px; font-weight:500; margin:6px 0 10px;">Subscriptions used by each class ${qm('How many students in each class are currently using one of your subscriptions.')}</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
       ${alloc.map(([n,c])=>`<div style="display:flex; align-items:center; gap:10px;"><span style="font-size:13px; width:42px; flex-shrink:0;">${n}</span><div style="flex:1;">${bar(c/mx*100,'#378ADD')}</div><span style="font-size:12px; color:var(--color-text-secondary); width:24px; text-align:right;">${c}</span></div>`).join('')}
     </div>
     <button id="ht" style="font-size:13px; margin-top:16px;"><i class="ti ti-chevron-down" style="font-size:15px; vertical-align:-3px;" aria-hidden="true"></i> See who is using a subscription</button>
-    <div id="hd" style="display:none; margin-top:10px;"></div>
+    <div id="hd" style="display:none; margin-top:12px;"></div>
     <button id="ct" style="font-size:13px; margin-top:10px; display:block;"><i class="ti ti-chevron-down" style="font-size:15px; vertical-align:-3px;" aria-hidden="true"></i> See your subscription batches (${codes.length})</button>
-    <div id="cd" style="display:none; margin-top:10px;"></div>`;
+    <div id="cd" style="display:none; margin-top:12px;"></div>`;
     const hdv=b.querySelector('#hd');
-    hdv.innerHTML=hint('If a student has left your school, press &ldquo;Free up&rdquo; to take back their subscription so you can give it to someone else.')+holders.map(n=>`<div data-n="${n}" style="display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><span style="flex:1; font-size:14px;">${n}</span><span style="font-size:12px; color:var(--color-text-success);">Using a subscription</span><button class="rc" style="font-size:12px; padding:5px 11px;">Free up</button></div>`).join('');
+    hdv.innerHTML=`<div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:6px;">Students currently using a subscription ${qm('If a student has left your school, press &ldquo;Free up&rdquo; to take back their subscription so you can give it to someone else.')}</div>`+holders.map(n=>`<div data-n="${n}" style="display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><span style="flex:1; font-size:14px;">${n}</span><span style="font-size:12px; color:var(--color-text-success);">Using a subscription</span><button class="rc" style="font-size:12px; padding:5px 11px;">Free up</button></div>`).join('');
     hdv.querySelectorAll('.rc').forEach(x=>x.onclick=e=>{const n=e.currentTarget.closest('[data-n]').dataset.n;holders=holders.filter(h=>h!==n);active.used--;active.avail++;showHolders=true;seats();sendPrompt('Freed up the subscription from '+n+' (demo)');});
     const cdv=b.querySelector('#cd');
-    cdv.innerHTML=hint('Each batch is a set of subscriptions you bought, with its own expiry date.')+codes.map(c=>`<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><div><div style="font-size:14px;">${c.used} of ${c.total} used</div><div style="font-size:12px; color:var(--color-text-secondary);">Valid until ${c.until}</div></div><span style="font-size:12px; padding:3px 10px; border-radius:var(--border-radius-md); background:${c.status==='In use'?'var(--color-background-success)':'var(--color-background-tertiary)'}; color:${c.status==='In use'?'var(--color-text-success)':'var(--color-text-tertiary)'};">${c.status}</span></div>`).join('');
+    cdv.innerHTML=`<div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:6px;">Your subscription batches ${qm('Each batch is a set of subscriptions you bought together, with its own expiry date.')}</div>`+codes.map(c=>`<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><div><div style="font-size:14px;">${c.used} of ${c.total} used</div><div style="font-size:12px; color:var(--color-text-secondary);">Valid until ${c.until}</div></div><span style="font-size:12px; padding:3px 10px; border-radius:var(--border-radius-md); background:${c.status==='In use'?'var(--color-background-success)':'var(--color-background-tertiary)'}; color:${c.status==='In use'?'var(--color-text-success)':'var(--color-text-tertiary)'};">${c.status}</span></div>`).join('');
     if(showHolders){hdv.style.display='block';b.querySelector('#ht i').className='ti ti-chevron-up';}
     if(showCodes){cdv.style.display='block';b.querySelector('#ct i').className='ti ti-chevron-up';}
     b.querySelector('#ht').onclick=()=>{showHolders=!showHolders;seats();};
@@ -252,7 +257,7 @@
     <div id="af" style="display:${adding?'block':'none'}; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:16px; margin-bottom:14px;">
       <div style="font-size:14px; font-weight:500; margin-bottom:4px;">Invite a teacher</div>
       <div style="font-size:12px; color:var(--color-text-tertiary); margin-bottom:12px; line-height:1.5;">Enter their email and pick a username for them. We&rsquo;ll email them a link to log in. If they&rsquo;re new to trainchinese, we create their account automatically.</div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px;"><div><label style="font-size:13px; color:var(--color-text-secondary);">Their email</label><input id="ie" type="email" placeholder="teacher@school.edu" style="width:100%; margin-top:4px;"/></div><div><label style="font-size:13px; color:var(--color-text-secondary);">Username for them</label><input id="iu" placeholder="ms_lim" style="width:100%; margin-top:4px;"/></div></div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px;"><div><label style="font-size:13px; color:var(--color-text-secondary);">Their email ${qm('We send a login link to this address. They use it to sign in the first time.')}</label><input id="ie" type="email" placeholder="teacher@school.edu" style="width:100%; margin-top:4px;"/></div><div><label style="font-size:13px; color:var(--color-text-secondary);">Username for them ${qm('A short name they use to log in, for example ms_lim. They can change their password later.')}</label><input id="iu" placeholder="ms_lim" style="width:100%; margin-top:4px;"/></div></div>
       <button id="si" style="font-size:14px; ${btnP} margin-top:12px;">Send the invite</button>
     </div>
     <div id="tl"></div>`;
@@ -265,9 +270,9 @@
         <button class="ex" aria-label="Settings for this teacher" style="padding:6px 10px; font-size:13px;"><i class="ti ti-chevron-${openT===i?'up':'down'}" style="font-size:15px;" aria-hidden="true"></i></button>
       </div>
       <div class="det" style="display:${openT===i?'block':'none'}; padding:2px 0 16px 46px;">
-        <div style="margin-bottom:10px;"><label style="font-size:13px; color:var(--color-text-secondary);">This teacher is an</label><br/><select class="role" style="margin-top:5px;"><option ${t.role==='Admin'?'selected':''}>Admin</option><option ${t.role==='Teacher'?'selected':''}>Teacher</option></select></div>
-        ${switchRow('Can give students a subscription','Lets this teacher use up your school&rsquo;s subscriptions.','',true)}
-        ${switchRow('Can add or remove students','Lets this teacher change who is in their classes.','',true)}
+        <div style="margin-bottom:4px;"><label style="font-size:13px; color:var(--color-text-secondary);">This teacher is an ${qm('An Admin can manage the whole school, including subscriptions and other teachers. A Teacher manages only their own classes.')}</label><br/><select class="role" style="margin-top:5px;"><option ${t.role==='Admin'?'selected':''}>Admin</option><option ${t.role==='Teacher'?'selected':''}>Teacher</option></select></div>
+        ${switchRow('Can give students a subscription','Lets this teacher use up your school&rsquo;s subscriptions when adding students.','',true)}
+        ${switchRow('Can add or remove students','Lets this teacher change who is in their classes and invite new students.','',true)}
         ${t.role!=='Admin'?`<button class="rm" style="font-size:13px; margin-top:12px; color:var(--color-text-danger); border-color:var(--color-border-danger);"><i class="ti ti-trash" style="font-size:15px; vertical-align:-3px; margin-right:5px;" aria-hidden="true"></i>Remove from school</button>`:`<div style="font-size:12px; color:var(--color-text-tertiary); margin-top:10px;">This is the school owner and cannot be removed.</div>`}
       </div></div>`).join('') + (teachers.length<total?`<button id="more" style="font-size:13px; margin-top:12px;">Show all ${total} teachers</button>`:'');
     tl.querySelectorAll('.ex').forEach((x,i)=>x.onclick=()=>{openT=openT===i?null:i;teach();});
@@ -285,8 +290,12 @@
     .map(t=>switchRow(t[0],t[1],'',t[2])).join('');})();
 
   // ===== YOUR ACCOUNT =====
-  (function(){const rows=[['ti-user','Your display name','Riverview','The name shown next to your messages.'],['ti-mail','Login email','admin@riverview.edu','Used to log in and reset your password.'],['ti-lock','Password','Last changed recently','Keep your account secure.'],['ti-world','Country','Other',''],['ti-language','App language','English','The language of these menus.']];
-    body('account').innerHTML=hd('Your account','Your personal login and language. These are just for you, not your whole school.')+rows.map(([ic,l,v,d])=>`<button style="width:100%; display:flex; align-items:center; gap:14px; padding:13px 0; border:none; border-bottom:0.5px solid var(--color-border-tertiary); background:none; border-radius:0; cursor:pointer; text-align:left;"><i class="ti ${ic}" style="font-size:19px; color:var(--color-text-secondary); flex-shrink:0;" aria-hidden="true"></i><span style="flex:1; min-width:0;"><span style="font-size:14px; display:block;">${l}</span>${d?`<span style="font-size:12px; color:var(--color-text-tertiary); display:block; margin-top:1px;">${d}</span>`:''}</span><span style="font-size:14px; color:var(--color-text-secondary); white-space:nowrap;">${v}</span><i class="ti ti-chevron-right" style="font-size:17px; color:var(--color-text-tertiary); flex-shrink:0;" aria-hidden="true"></i></button>`).join('')+`<div style="font-size:12px; color:var(--color-text-tertiary); margin-top:14px;">Tap any row above to change it.</div>`;})();
+  (function(){const rows=[['ti-user','Your display name','Riverview','The name shown next to your messages.'],['ti-mail','Login email','admin@riverview.edu','The address you use to log in and reset your password.'],['ti-lock','Password','Last changed recently','Keep your account secure. Use at least 8 characters.'],['ti-world','Country','Other','Where your school is based.'],['ti-language','App language','English','The language of these menus &mdash; not what your students learn.']];
+    const el=body('account');
+    el.innerHTML=hd('Your account','Your personal login and language. These are just for you, not your whole school.')+rows.map(([ic,l,v,d])=>`<div class="arow" data-l="${l}" role="button" tabindex="0" style="width:100%; display:flex; align-items:center; gap:14px; padding:13px 0; border-bottom:0.5px solid var(--color-border-tertiary); cursor:pointer;"><i class="ti ${ic}" style="font-size:19px; color:var(--color-text-secondary); flex-shrink:0;" aria-hidden="true"></i><span style="flex:1; min-width:0; font-size:14px;">${l} ${qm(d)}</span><span style="font-size:14px; color:var(--color-text-secondary); white-space:nowrap;">${v}</span><i class="ti ti-chevron-right" style="font-size:17px; color:var(--color-text-tertiary); flex-shrink:0;" aria-hidden="true"></i></div>`).join('')+`<div style="font-size:12px; color:var(--color-text-tertiary); margin-top:14px;">Tap any row above to change it.</div>`;
+    el.querySelectorAll('.arow').forEach(r=>r.onclick=()=>sendPrompt('Change your '+r.dataset.l.toLowerCase()+' (demo)'));})();
+
+  document.addEventListener('click',e=>{const q=e.target.closest('.qm');if(q){e.stopPropagation();e.preventDefault();q.focus();}},true);
 
   if('IntersectionObserver' in window){
     const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)setActive(e.target.id.replace('s-',''));});},{rootMargin:'-10% 0px -70% 0px'});
