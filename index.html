@@ -24,31 +24,32 @@
   }}
   *{box-sizing:border-box;}
   body{margin:0; background:var(--color-background-tertiary); color:var(--color-text-primary); font-family:var(--font-sans); line-height:1.5;}
-  .wrap{max-width:1080px; margin:0 auto; padding:28px 22px 80px;}
-  button{font-family:inherit; font-size:14px; color:var(--color-text-primary); background:transparent; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); padding:7px 13px; cursor:pointer; transition:background .12s,transform .05s;}
+  .wrap{max-width:1080px; margin:0 auto; padding:22px 22px 90px;}
+  button{font-family:inherit; font-size:14px; color:var(--color-text-primary); background:transparent; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); padding:8px 14px; cursor:pointer; transition:background .12s,transform .05s;}
   button:hover{background:var(--color-background-secondary);} button:active{transform:scale(0.98);}
-  input,select{font-family:inherit; font-size:14px; color:var(--color-text-primary); background:var(--color-background-primary); border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); height:36px; padding:0 10px;}
+  input,select{font-family:inherit; font-size:14px; color:var(--color-text-primary); background:var(--color-background-primary); border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); height:38px; padding:0 10px;}
   input[type=checkbox]{height:auto; accent-color:#9E2A2A;}
-  select{height:36px;} label{line-height:1.4;}
+  label{line-height:1.4;}
   .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;}
-  #toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--color-text-primary); color:var(--color-background-primary); padding:10px 16px; border-radius:var(--border-radius-md); font-size:13px; opacity:0; pointer-events:none; transition:.2s; z-index:50; max-width:90%;}
+  #toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--color-text-primary); color:var(--color-background-primary); padding:11px 17px; border-radius:var(--border-radius-md); font-size:13px; opacity:0; pointer-events:none; transition:.2s; z-index:50; max-width:90%;}
   #toast.on{opacity:1; transform:translateX(-50%) translateY(0);}
-  .demo-banner{max-width:1080px; margin:0 auto 0; padding:8px 22px; font-size:12px; color:var(--color-text-secondary); text-align:center;}
+  .demo-banner{max-width:1080px; margin:0 auto; padding:10px 22px; font-size:13px; color:var(--color-text-secondary); text-align:center; display:flex; gap:8px; align-items:center; justify-content:center;}
 </style>
 </head>
 <body>
-<div class="demo-banner">Interactive redesign prototype — demo data, not connected to a live account. Actions show a toast instead of saving.</div>
+<div class="demo-banner"><i class="ti ti-eye" aria-hidden="true"></i><span>This is a preview of the new school settings &mdash; click around freely. Nothing you change here is saved.</span></div>
 <div class="wrap">
-<h2 class="sr-only">Redesigned trainchinese school settings: school profile, seat licensing, teacher roles, notifications and account.</h2>
+<h2 class="sr-only">Redesigned trainchinese school settings, written in plain language for non-technical school admins.</h2>
 <div style="font-family:var(--font-sans); color:var(--color-text-primary); display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;">
 
-  <aside id="side" style="flex:0 0 168px; position:sticky; top:16px;">
+  <aside id="side" style="flex:0 0 178px; position:sticky; top:16px;">
     <div style="display:flex; align-items:center; gap:7px; padding:4px 8px 14px;">
       <span style="font-size:17px; font-weight:500; letter-spacing:-0.3px;">trainchinese</span>
       <span style="display:inline-flex; gap:2px;"><span style="width:5px; height:5px; background:#EF9F27; border-radius:50%;"></span><span style="width:5px; height:5px; background:#9E2A2A; border-radius:50%;"></span></span>
     </div>
     <div style="font-size:12px; color:var(--color-text-tertiary); text-transform:uppercase; letter-spacing:0.5px; padding:0 8px 8px;">School settings</div>
     <nav id="nav" style="display:flex; flex-direction:column; gap:2px;"></nav>
+    <button id="help" style="margin:14px 8px 0; font-size:13px; width:calc(100% - 16px); display:flex; align-items:center; gap:7px; justify-content:center;"><i class="ti ti-help-circle" style="font-size:16px;" aria-hidden="true"></i>Need help?</button>
   </aside>
 
   <main id="main" style="flex:1; min-width:280px; display:flex; flex-direction:column; gap:16px;"></main>
@@ -63,89 +64,174 @@
   const main=document.getElementById('main'), navEl=document.getElementById('nav');
   const round=n=>Math.round(n);
   const btnP=`background:${RED}; border:0.5px solid ${RED}; color:#fff;`;
-  let toastT; const sendPrompt=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600);};
+  let toastT; const sendPrompt=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2800);};
   const sections=[
     ['profile','ti-building','School'],
-    ['lists','ti-books','Lists'],
-    ['seats','ti-license','Seats'],
+    ['lists','ti-books','Word lists'],
+    ['seats','ti-license','Subscriptions'],
     ['teachers','ti-users','Teachers'],
-    ['notify','ti-bell','Notifications'],
-    ['account','ti-user-cog','Account']
+    ['notify','ti-bell','Email updates'],
+    ['account','ti-user-cog','Your account']
   ];
   sections.forEach(([id,ic,label])=>{
-    const a=$(`<a href="#" data-id="${id}" style="display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:var(--border-radius-md); font-size:14px; color:var(--color-text-secondary); border-left:3px solid transparent; text-decoration:none;"><i class="ti ${ic}" style="font-size:17px;" aria-hidden="true"></i>${label}</a>`);
+    const a=$(`<a href="#" data-id="${id}" style="display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:var(--border-radius-md); font-size:14px; color:var(--color-text-secondary); border-left:3px solid transparent; text-decoration:none;"><i class="ti ${ic}" style="font-size:17px;" aria-hidden="true"></i>${label}</a>`);
     a.onclick=e=>{e.preventDefault();document.getElementById('s-'+id).scrollIntoView({behavior:'smooth',block:'start'});};
     navEl.appendChild(a);
-    main.appendChild($(`<section id="s-${id}" style="background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:18px 20px; scroll-margin-top:16px;"><div class="body"></div></section>`));
+    main.appendChild($(`<section id="s-${id}" style="background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:20px 22px; scroll-margin-top:16px;"><div class="body"></div></section>`));
   });
+  document.getElementById('help').onclick=()=>sendPrompt('I need help setting up my school on trainchinese');
   const setActive=id=>navEl.querySelectorAll('a').forEach(a=>{const on=a.dataset.id===id;a.style.color=on?RED:'var(--color-text-secondary)';a.style.borderLeftColor=on?RED:'transparent';a.style.fontWeight=on?'500':'400';});
   setActive('profile');
   const body=id=>document.querySelector('#s-'+id+' .body');
-  const hd=(t,s)=>`<div style="margin-bottom:14px;"><div style="font-size:16px; font-weight:500;">${t}</div>${s?`<div style="font-size:13px; color:var(--color-text-secondary); margin-top:2px;">${s}</div>`:''}</div>`;
-  const tile=(l,v,warn)=>`<div style="background:${warn?'var(--color-background-warning)':'var(--color-background-secondary)'}; border-radius:var(--border-radius-md); padding:10px 12px;"><div style="font-size:12px; color:var(--color-text-secondary);">${l}</div><div style="font-size:22px; font-weight:500; margin-top:2px; color:${warn?'var(--color-text-warning)':'inherit'};">${v}</div></div>`;
-  const bar=(p,col)=>`<div style="height:9px; background:var(--color-border-tertiary); border-radius:5px; overflow:hidden;"><div style="height:100%; width:${p}%; background:${col};"></div></div>`;
+  const hd=(t,s)=>`<div style="margin-bottom:14px;"><div style="font-size:17px; font-weight:500;">${t}</div>${s?`<div style="font-size:14px; color:var(--color-text-secondary); margin-top:3px; line-height:1.5;">${s}</div>`:''}</div>`;
+  const note=(txt)=>`<div style="display:flex; gap:9px; background:var(--color-background-info); border-radius:var(--border-radius-md); padding:11px 13px; margin-bottom:16px;"><i class="ti ti-info-circle" style="font-size:17px; color:var(--color-text-info); flex-shrink:0; margin-top:1px;" aria-hidden="true"></i><span style="font-size:13px; color:var(--color-text-info); line-height:1.5;">${txt}</span></div>`;
+  const hint=(txt)=>`<div style="font-size:12px; color:var(--color-text-tertiary); margin-top:5px; line-height:1.45;">${txt}</div>`;
+  const tile=(l,v,warn,sub)=>`<div style="background:${warn?'var(--color-background-warning)':'var(--color-background-secondary)'}; border-radius:var(--border-radius-md); padding:12px 14px;"><div style="font-size:12px; color:var(--color-text-secondary);">${l}</div><div style="font-size:24px; font-weight:500; margin-top:2px; color:${warn?'var(--color-text-warning)':'inherit'};">${v}</div>${sub?`<div style="font-size:11px; color:var(--color-text-tertiary); margin-top:1px;">${sub}</div>`:''}</div>`;
+  const bar=(p,col)=>`<div style="height:10px; background:var(--color-border-tertiary); border-radius:5px; overflow:hidden;"><div style="height:100%; width:${p}%; background:${col};"></div></div>`;
+  const switchRow=(title,desc,attr,checked)=>`<label style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding:12px 0; border-bottom:0.5px solid var(--color-border-tertiary); cursor:pointer;"><span style="min-width:0;"><span style="font-size:14px; display:block;">${title}</span><span style="font-size:12px; color:var(--color-text-tertiary); display:block; margin-top:2px; line-height:1.45;">${desc}</span></span><input type="checkbox" ${attr} ${checked?'checked':''} style="width:19px; height:19px; flex-shrink:0; margin-top:2px;"/></label>`;
 
+  // ===== SCHOOL =====
   const sp={name:'Riverview',type:'Riverview Primary School',students:280,chars:'Simplified',textbooks:'Not set'};
   function profile(edit){
-    const b=body('profile'); const rows=[['School name','name'],['School type','type'],['Number of students','students'],['Textbooks used','textbooks']];
+    const b=body('profile'); const rows=[['School name','name','The name students and teachers see.'],['School type','type','For your records only.'],['Number of students','students','Roughly how many you have. This does not limit anything.'],['Textbooks used','textbooks','Optional. Helps us suggest matching word lists.']];
     if(!edit){
-      b.innerHTML=hd('School profile','Basic information about your school')+
-      `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px;">
+      b.innerHTML=hd('Your school','Basic details about your school. Only the school name is shown to students &mdash; the rest is just for your records.')+
+      `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px;">
         ${rows.map(([l,k])=>`<div><div style="font-size:13px; color:var(--color-text-secondary);">${l}</div><div style="font-size:15px; margin-top:2px;">${sp[k]}</div></div>`).join('')}
-        <div><div style="font-size:13px; color:var(--color-text-secondary);">Character set</div><div style="margin-top:4px;"><span style="font-size:13px; background:var(--color-background-secondary); padding:3px 10px; border-radius:var(--border-radius-md);">${sp.chars} Chinese</span></div></div>
-      </div><button id="e" style="margin-top:16px; font-size:13px;"><i class="ti ti-edit" style="font-size:15px; vertical-align:-2px; margin-right:5px;" aria-hidden="true"></i>Edit profile</button>`;
+        <div><div style="font-size:13px; color:var(--color-text-secondary);">Character style</div><div style="margin-top:4px;"><span style="font-size:13px; background:var(--color-background-secondary); padding:3px 10px; border-radius:var(--border-radius-md);">${sp.chars} Chinese</span></div></div>
+      </div><button id="e" style="margin-top:18px; font-size:14px;"><i class="ti ti-edit" style="font-size:16px; vertical-align:-3px; margin-right:6px;" aria-hidden="true"></i>Edit these details</button>`;
       b.querySelector('#e').onclick=()=>profile(true);
     } else {
-      b.innerHTML=hd('School profile','Editing')+
-      `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;">
-        ${rows.map(([l,k])=>`<div><label style="font-size:13px; color:var(--color-text-secondary);">${l}</label><input data-k="${k}" value="${sp[k]}" style="width:100%; margin-top:4px;"/></div>`).join('')}
-        <div><label style="font-size:13px; color:var(--color-text-secondary);">Character set</label><select data-k="chars" style="width:100%; margin-top:4px;"><option ${sp.chars==='Simplified'?'selected':''}>Simplified</option><option ${sp.chars==='Traditional'?'selected':''}>Traditional</option></select></div>
-      </div><div style="margin-top:16px; display:flex; gap:8px;"><button id="sv" style="font-size:13px; ${btnP}">Save</button><button id="cn" style="font-size:13px;">Cancel</button></div>`;
-      b.querySelector('#sv').onclick=()=>{b.querySelectorAll('[data-k]').forEach(i=>sp[i.dataset.k]=i.value);profile(false);sendPrompt('School profile saved (demo)');};
+      b.innerHTML=hd('Your school','Editing &mdash; remember to press Save when you are done.')+
+      `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px;">
+        ${rows.map(([l,k,h])=>`<div><label style="font-size:13px; color:var(--color-text-secondary);">${l}</label><input data-k="${k}" value="${sp[k]}" style="width:100%; margin-top:4px;"/>${hint(h)}</div>`).join('')}
+        <div><label style="font-size:13px; color:var(--color-text-secondary);">Character style</label><select data-k="chars" style="width:100%; margin-top:4px;"><option ${sp.chars==='Simplified'?'selected':''}>Simplified</option><option ${sp.chars==='Traditional'?'selected':''}>Traditional</option></select>${hint('Simplified is used in mainland China and Singapore. Traditional is used in Taiwan, Hong Kong and Macau.')}</div>
+      </div><div style="margin-top:18px; display:flex; gap:8px;"><button id="sv" style="font-size:14px; ${btnP}">Save changes</button><button id="cn" style="font-size:14px;">Cancel</button></div>`;
+      b.querySelector('#sv').onclick=()=>{b.querySelectorAll('[data-k]').forEach(i=>sp[i.dataset.k]=i.value);profile(false);sendPrompt('Saved (demo)');};
       b.querySelector('#cn').onclick=()=>profile(false);
     }
   }
   profile(false);
 
-  const active={total:300,used:275,avail:25,until:'30 Apr 2027'};
+  // ===== WORD LISTS =====
+  const classList=['P2-A','P2-I','P2-J','P2-R','P2-S','P2-T','P1-S','P1-A','P1-J','P1-R','P1-T'];
+  const wopts={chineseType:['Let students choose','Simplified characters only','Traditional characters only'],romanization:['Let students choose','Pinyin with tone marks  (nǐ hǎo)','Pinyin with numbers  (ni3 hao3)','Zhuyin / Bopomofo  (ㄋㄧˇ)'],customPacks:['Let students make their own word sets','Keep students on my lists only'],login:['Keep every login button','Hide logins of students who left']};
+  const wlabel={chineseType:'Which characters students see',romanization:'Pronunciation guide',customPacks:'Student-made word sets',login:'Old student logins'};
+  const whint={chineseType:'Most schools choose Simplified. Pick &ldquo;Let students choose&rdquo; if you are unsure.',romanization:'The spelling that shows how to say a word. Pinyin with tone marks is the usual choice.',customPacks:'Turn this off if everyone should study only the lists you pick.',login:'Tidies up the login screen by hiding students who have left.'};
+  const writer={chineseType:1,romanization:1,customPacks:1,login:1,shareNotes:false,studentLists:false};
+  const catalog=[];
+  for(let i=19;i>=11;i--)catalog.push({n:'2B Unit '+i,shared:i>14});
+  for(let i=10;i>=1;i--)catalog.push({n:'2A Unit '+String(i).padStart(2,'0'),shared:i>6});
+  ['1B15 v4','1B14 v3','1B13 v2','1B12 v1','1B11'].forEach(n=>catalog.push({n,shared:true}));
+  for(let i=19;i>=1;i--)catalog.push({n:'1A'+String(i).padStart(2,'0'),shared:true});
+  let curClass='P2-A', order='priority', advOpen=false;
+  function lists(){
+    const b=body('lists');
+    const sharedNow=catalog.filter(c=>c.shared).length;
+    const summary=`${wopts.chineseType[writer.chineseType].split('  ')[0]} &middot; ${wopts.romanization[writer.romanization].split('  ')[0]}`;
+    b.innerHTML=hd('Word lists','Choose which Chinese word lists each class studies. Add a list and it appears in your students&rsquo; app for them to learn.')+
+    note('Each class is set up separately. First pick a class below, then tick the lists you want it to study.')+
+    `<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
+      <span style="font-size:14px;">Set up this class:</span>
+      <select id="cls" style="font-weight:500;">${classList.map(c=>`<option ${c===curClass?'selected':''}>${c}</option>`).join('')}</select>
+      <span style="font-size:13px; color:var(--color-text-secondary);"><span id="sc">${sharedNow}</span> of ${catalog.length} lists added</span>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
+      <div style="font-size:15px; font-weight:500;">Lists for <span id="cn2">${curClass}</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><span style="font-size:12px; color:var(--color-text-tertiary);">Order students see them</span><div style="display:inline-flex; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); overflow:hidden;">
+        <button class="ord" data-o="priority" style="border:none; border-radius:0; font-size:12px; padding:6px 11px; ${order==='priority'?'background:var(--color-background-secondary);':''}">My order</button>
+        <button class="ord" data-o="abc" style="border:none; border-radius:0; font-size:12px; padding:6px 11px; ${order==='abc'?'background:var(--color-background-secondary);':''}">A&ndash;Z</button>
+      </div></div>
+    </div>
+    ${hint('Tick a list to add it to this class. Untick to remove it &mdash; students keep what they have already learned.')}
+    <input id="lq" placeholder="Search word lists" style="width:100%; margin:10px 0 8px;"/>
+    <div style="display:flex; gap:8px; margin-bottom:6px; flex-wrap:wrap;"><button id="shareall" style="font-size:13px;"><i class="ti ti-checks" style="font-size:15px; vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Add all shown</button><button id="assign" style="font-size:13px;"><i class="ti ti-copy" style="font-size:15px; vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Copy these to another class&hellip;</button></div>
+    <div id="ll"></div>
+    <div style="margin-top:20px; border-top:0.5px solid var(--color-border-tertiary); padding-top:14px;">
+      <button id="advtog" style="width:100%; display:flex; align-items:center; gap:10px; border:none; background:none; border-radius:0; padding:4px 0; cursor:pointer; text-align:left;">
+        <i class="ti ti-adjustments" style="font-size:19px; color:var(--color-text-secondary);" aria-hidden="true"></i>
+        <span style="flex:1;"><span style="font-size:15px; font-weight:500; display:block;">How Chinese is shown to students</span><span style="font-size:12px; color:var(--color-text-tertiary);">Now: ${summary}. Most schools can leave these as they are.</span></span>
+        <i class="ti ti-chevron-${advOpen?'up':'down'}" style="font-size:18px; color:var(--color-text-tertiary);" aria-hidden="true"></i>
+      </button>
+      <div id="adv" style="display:${advOpen?'block':'none'}; margin-top:14px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;">
+          ${Object.keys(wopts).map(k=>`<div><label style="font-size:14px;">${wlabel[k]}</label><select data-w="${k}" style="width:100%; margin-top:5px;">${wopts[k].map((o,i)=>`<option ${i===writer[k]?'selected':''}>${o}</option>`).join('')}</select>${hint(whint[k])}</div>`).join('')}
+        </div>
+        <div style="margin-top:14px;">
+          ${switchRow('Share my notes with this class','Students will see any notes you add to a word.','data-t="shareNotes"',writer.shareNotes)}
+          ${switchRow('Let students add their own word lists','If off, only you decide what this class studies.','data-t="studentLists"',writer.studentLists)}
+        </div>
+      </div>
+    </div>`;
+    const ll=b.querySelector('#ll');
+    function fillRows(){
+      let cat=catalog.slice(); if(order==='abc')cat.sort((a,b)=>a.n.localeCompare(b.n));
+      ll.innerHTML=cat.map(c=>{const idx=catalog.indexOf(c);return `<div data-n="${c.n.toLowerCase()}" style="display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:0.5px solid var(--color-border-tertiary);">
+        <label style="display:inline-flex; align-items:center; cursor:pointer;"><input type="checkbox" data-idx="${idx}" ${c.shared?'checked':''} style="width:19px; height:19px;"/></label>
+        <span style="flex:1; font-size:14px;">${c.n}</span>
+        <span class="sl" style="font-size:12px; color:${c.shared?'var(--color-text-success)':'var(--color-text-tertiary)'}; min-width:74px; text-align:right;">${c.shared?'In this class':'Not added'}</span>
+        <button class="pv" style="font-size:12px; padding:5px 10px;">View words</button>
+      </div>`;}).join('');
+      ll.querySelectorAll('[data-idx]').forEach(cb=>cb.onchange=()=>{const it=catalog[+cb.dataset.idx];it.shared=cb.checked;const lab=cb.closest('[data-n]').querySelector('.sl');lab.textContent=cb.checked?'In this class':'Not added';lab.style.color=cb.checked?'var(--color-text-success)':'var(--color-text-tertiary)';b.querySelector('#sc').textContent=catalog.filter(c=>c.shared).length;});
+      ll.querySelectorAll('.pv').forEach(x=>x.onclick=()=>sendPrompt('Showing the words in this list (demo)'));
+      const q=(b.querySelector('#lq').value||'').toLowerCase().trim();
+      if(q)[...ll.children].forEach(r=>{r.style.display=r.dataset.n.includes(q)?'':'none';});
+    }
+    fillRows();
+    b.querySelector('#cls').onchange=e=>{curClass=e.target.value;b.querySelector('#cn2').textContent=curClass;};
+    b.querySelectorAll('[data-w]').forEach(s=>s.onchange=()=>{writer[s.dataset.w]=s.selectedIndex;sendPrompt('Updated (demo)');lists();});
+    b.querySelectorAll('[data-t]').forEach(c=>c.onchange=()=>{writer[c.dataset.t]=c.checked;});
+    b.querySelectorAll('.ord').forEach(x=>x.onclick=()=>{order=x.dataset.o;lists();});
+    b.querySelector('#lq').oninput=e=>{const q=e.target.value.toLowerCase().trim();[...ll.children].forEach(r=>{r.style.display=r.dataset.n.includes(q)?'':'none';});};
+    b.querySelector('#shareall').onclick=()=>{[...ll.children].forEach(r=>{if(r.style.display!=='none'){const cb=r.querySelector('[data-idx]');catalog[+cb.dataset.idx].shared=true;}});fillRows();b.querySelector('#sc').textContent=catalog.filter(c=>c.shared).length;sendPrompt('Added all shown lists (demo)');};
+    b.querySelector('#assign').onclick=()=>sendPrompt('Copy these lists to another class (demo)');
+    b.querySelector('#advtog').onclick=()=>{advOpen=!advOpen;lists();};
+  }
+  lists();
+
+  // ===== SUBSCRIPTIONS (SEATS) =====
+  const active={total:300,used:275,avail:25,until:'30 April 2027'};
   const alloc=[['P2-A',32],['P2-R',31],['P2-S',31],['P2-T',31],['P1-R',30],['P1-A',29],['P1-T',29],['P1-J',28],['P1-S',17],['P2-I',15],['P2-J',0]];
   let holders=['Aiden Tan','Bella Ng','Caleb Lim','Daria Koh','Ethan Goh','Faith Wong'];
-  const codes=[{code:'WRT-2027-A',total:300,used:275,until:'30 Apr 2027',status:'Active'},{code:'WRT-2026-A',total:330,used:291,until:'28 Feb 2026',status:'Expired'}];
+  const codes=[{code:'WRT-2027-A',total:300,used:275,until:'30 April 2027',status:'In use'},{code:'WRT-2026-A',total:330,used:291,until:'28 February 2026',status:'Expired'}];
   let showCodes=false, showHolders=false;
   function seats(){
     const b=body('seats'); const mx=Math.max(...alloc.map(a=>a[1]));
-    b.innerHTML=hd('Student seats','Subscriptions you assign to students')+
-    `<div style="background:var(--color-background-warning); border-radius:var(--border-radius-md); padding:10px 14px; display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
-      <i class="ti ti-alert-triangle" style="font-size:18px; color:var(--color-text-warning);" aria-hidden="true"></i>
-      <span style="font-size:13px; color:var(--color-text-warning); flex:1; min-width:160px;">Only ${active.avail} seats left, license renews ${active.until}.</span>
-      <button id="renew" style="font-size:12px; ${btnP} padding:5px 11px;">Renew</button>
+    b.innerHTML=hd('Student subscriptions','A subscription &mdash; sometimes called a &ldquo;seat&rdquo; &mdash; lets one student use the full app. Here you can see how many you have and free up ones you no longer need.')+
+    note(`You have ${active.total} subscriptions. ${active.used} students are using one right now, so ${active.avail} are free to give out.`)+
+    `<div style="background:var(--color-background-warning); border-radius:var(--border-radius-md); padding:12px 14px; display:flex; align-items:center; gap:11px; margin-bottom:18px; flex-wrap:wrap;">
+      <i class="ti ti-alert-triangle" style="font-size:19px; color:var(--color-text-warning);" aria-hidden="true"></i>
+      <span style="font-size:13px; color:var(--color-text-warning); flex:1; min-width:180px;">Only ${active.avail} free subscriptions left, and your current ones expire on ${active.until}. Contact us to add more or renew.</span>
+      <button id="renew" style="font-size:13px; ${btnP} padding:6px 12px;">Get more</button>
     </div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;"><span style="font-size:14px;">${active.used} of ${active.total} seats in use</span><span style="font-size:13px; color:var(--color-text-secondary);">${active.avail} available</span></div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;"><span style="font-size:14px;">${active.used} of your ${active.total} subscriptions are in use</span><span style="font-size:13px; color:var(--color-text-secondary);">${active.avail} free</span></div>
     ${bar(round(active.used/active.total*100),RED)}
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(108px,1fr)); gap:10px; margin:16px 0;">
-      ${tile('Total',active.total)}${tile('In use',active.used)}${tile('Available',active.avail,true)}
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:10px; margin:18px 0;">
+      ${tile('You have',active.total,false,'in total')}${tile('In use',active.used,false,'by students')}${tile('Still free',active.avail,true,'to give out')}
     </div>
-    <div style="font-size:14px; font-weight:500; margin:6px 0 10px;">Seats used by class</div>
-    <div style="display:flex; flex-direction:column; gap:7px;">
-      ${alloc.map(([n,c])=>`<div style="display:flex; align-items:center; gap:10px;"><span style="font-size:13px; width:42px; flex-shrink:0;">${n}</span><div style="flex:1;">${bar(c/mx*100,'#378ADD')}</div><span style="font-size:12px; color:var(--color-text-secondary); width:22px; text-align:right;">${c}</span></div>`).join('')}
+    <div style="font-size:15px; font-weight:500; margin:6px 0 4px;">Subscriptions used by each class</div>
+    ${hint('How many students in each class are using a subscription.')}
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+      ${alloc.map(([n,c])=>`<div style="display:flex; align-items:center; gap:10px;"><span style="font-size:13px; width:42px; flex-shrink:0;">${n}</span><div style="flex:1;">${bar(c/mx*100,'#378ADD')}</div><span style="font-size:12px; color:var(--color-text-secondary); width:24px; text-align:right;">${c}</span></div>`).join('')}
     </div>
-    <button id="ht" style="font-size:13px; margin-top:14px;"><i class="ti ti-chevron-down" style="font-size:15px; vertical-align:-2px;" aria-hidden="true"></i> Recent seat holders</button>
+    <button id="ht" style="font-size:13px; margin-top:16px;"><i class="ti ti-chevron-down" style="font-size:15px; vertical-align:-3px;" aria-hidden="true"></i> See who is using a subscription</button>
     <div id="hd" style="display:none; margin-top:10px;"></div>
-    <button id="ct" style="font-size:13px; margin-top:10px; display:block;"><i class="ti ti-chevron-down" style="font-size:15px; vertical-align:-2px;" aria-hidden="true"></i> All subscription codes (${codes.length})</button>
+    <button id="ct" style="font-size:13px; margin-top:10px; display:block;"><i class="ti ti-chevron-down" style="font-size:15px; vertical-align:-3px;" aria-hidden="true"></i> See your subscription batches (${codes.length})</button>
     <div id="cd" style="display:none; margin-top:10px;"></div>`;
     const hdv=b.querySelector('#hd');
-    hdv.innerHTML=holders.map(n=>`<div data-n="${n}" style="display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><span style="flex:1; font-size:14px;">${n}</span><span style="font-size:12px; color:var(--color-text-success);">Seat active</span><button class="rc" style="font-size:12px; padding:4px 9px;">Reclaim</button></div>`).join('');
-    hdv.querySelectorAll('.rc').forEach(x=>x.onclick=e=>{const n=e.currentTarget.closest('[data-n]').dataset.n;holders=holders.filter(h=>h!==n);active.used--;active.avail++;showHolders=true;seats();sendPrompt('Seat reclaimed from '+n+' (demo)');});
+    hdv.innerHTML=hint('If a student has left your school, press &ldquo;Free up&rdquo; to take back their subscription so you can give it to someone else.')+holders.map(n=>`<div data-n="${n}" style="display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><span style="flex:1; font-size:14px;">${n}</span><span style="font-size:12px; color:var(--color-text-success);">Using a subscription</span><button class="rc" style="font-size:12px; padding:5px 11px;">Free up</button></div>`).join('');
+    hdv.querySelectorAll('.rc').forEach(x=>x.onclick=e=>{const n=e.currentTarget.closest('[data-n]').dataset.n;holders=holders.filter(h=>h!==n);active.used--;active.avail++;showHolders=true;seats();sendPrompt('Freed up the subscription from '+n+' (demo)');});
     const cdv=b.querySelector('#cd');
-    cdv.innerHTML=codes.map(c=>`<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><div><div style="font-size:14px; font-family:var(--font-mono);">${c.code}</div><div style="font-size:12px; color:var(--color-text-secondary);">until ${c.until}</div></div><span style="font-size:13px; color:var(--color-text-secondary);">${c.used}/${c.total}</span><span style="font-size:12px; padding:3px 9px; border-radius:var(--border-radius-md); background:${c.status==='Active'?'var(--color-background-success)':'var(--color-background-tertiary)'}; color:${c.status==='Active'?'var(--color-text-success)':'var(--color-text-tertiary)'};">${c.status}</span></div>`).join('');
+    cdv.innerHTML=hint('Each batch is a set of subscriptions you bought, with its own expiry date.')+codes.map(c=>`<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><div><div style="font-size:14px;">${c.used} of ${c.total} used</div><div style="font-size:12px; color:var(--color-text-secondary);">Valid until ${c.until}</div></div><span style="font-size:12px; padding:3px 10px; border-radius:var(--border-radius-md); background:${c.status==='In use'?'var(--color-background-success)':'var(--color-background-tertiary)'}; color:${c.status==='In use'?'var(--color-text-success)':'var(--color-text-tertiary)'};">${c.status}</span></div>`).join('');
     if(showHolders){hdv.style.display='block';b.querySelector('#ht i').className='ti ti-chevron-up';}
     if(showCodes){cdv.style.display='block';b.querySelector('#ct i').className='ti ti-chevron-up';}
     b.querySelector('#ht').onclick=()=>{showHolders=!showHolders;seats();};
     b.querySelector('#ct').onclick=()=>{showCodes=!showCodes;seats();};
-    b.querySelector('#renew').onclick=()=>sendPrompt('Renew / buy more seats (demo)');
+    b.querySelector('#renew').onclick=()=>sendPrompt('I would like to add more or renew student subscriptions (demo)');
   }
   seats();
 
+  // ===== TEACHERS =====
   let teachers=[
     {n:'Riverview (you)',role:'Admin',classes:11},
     {n:'Ms Tan Wei',role:'Teacher',classes:1},
@@ -160,103 +246,47 @@
   function teach(){
     const b=body('teachers');
     const ini=n=>n.replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('')||'T';
-    b.innerHTML=hd('Teachers','People who can manage classes — '+total+' total')+
-    `<div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><button id="add" style="font-size:13px; ${btnP}"><i class="ti ti-user-plus" style="font-size:15px; vertical-align:-2px; margin-right:5px;" aria-hidden="true"></i>Invite teacher</button></div>
-    <div id="af" style="display:${adding?'block':'none'}; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:14px; margin-bottom:12px;">
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;"><div><label style="font-size:13px; color:var(--color-text-secondary);">Email</label><input id="ie" type="email" placeholder="teacher@school.edu" style="width:100%; margin-top:4px;"/></div><div><label style="font-size:13px; color:var(--color-text-secondary);">Username</label><input id="iu" placeholder="ms_lim" style="width:100%; margin-top:4px;"/></div></div>
-      <div style="font-size:12px; color:var(--color-text-secondary); margin:8px 0;">If not registered, we create the account and email login details.</div>
-      <button id="si" style="font-size:13px; ${btnP}">Send invite</button>
+    b.innerHTML=hd('Teachers','The teachers who can run classes, choose word lists and see how students are doing.')+
+    note('An <strong style="font-weight:500;">Admin</strong> (that&rsquo;s you) manages the whole school. A <strong style="font-weight:500;">Teacher</strong> looks after only their own classes.')+
+    `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;"><span style="font-size:13px; color:var(--color-text-secondary);">${total} teachers in your school</span><button id="add" style="font-size:14px; ${btnP}"><i class="ti ti-user-plus" style="font-size:16px; vertical-align:-3px; margin-right:6px;" aria-hidden="true"></i>Invite a teacher</button></div>
+    <div id="af" style="display:${adding?'block':'none'}; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:16px; margin-bottom:14px;">
+      <div style="font-size:14px; font-weight:500; margin-bottom:4px;">Invite a teacher</div>
+      <div style="font-size:12px; color:var(--color-text-tertiary); margin-bottom:12px; line-height:1.5;">Enter their email and pick a username for them. We&rsquo;ll email them a link to log in. If they&rsquo;re new to trainchinese, we create their account automatically.</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px;"><div><label style="font-size:13px; color:var(--color-text-secondary);">Their email</label><input id="ie" type="email" placeholder="teacher@school.edu" style="width:100%; margin-top:4px;"/></div><div><label style="font-size:13px; color:var(--color-text-secondary);">Username for them</label><input id="iu" placeholder="ms_lim" style="width:100%; margin-top:4px;"/></div></div>
+      <button id="si" style="font-size:14px; ${btnP} margin-top:12px;">Send the invite</button>
     </div>
     <div id="tl"></div>`;
     const tl=b.querySelector('#tl');
     tl.innerHTML=teachers.map((t,i)=>`<div data-i="${i}" style="border-bottom:0.5px solid var(--color-border-tertiary);">
-      <div style="display:flex; align-items:center; gap:12px; padding:9px 0;">
-        <div style="width:32px; height:32px; border-radius:50%; background:var(--color-background-info); color:var(--color-text-info); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; flex-shrink:0;">${ini(t.n)}</div>
-        <div style="flex:1; min-width:0;"><div style="font-size:14px;">${t.n}</div><div style="font-size:12px; color:var(--color-text-secondary);">${t.classes} ${t.classes===1?'class':'classes'}</div></div>
-        <span style="font-size:12px; padding:3px 9px; border-radius:var(--border-radius-md); background:${t.role==='Admin'?'var(--color-background-info)':'var(--color-background-secondary)'}; color:${t.role==='Admin'?'var(--color-text-info)':'var(--color-text-secondary)'};">${t.role}</span>
-        <button class="ex" aria-label="Edit teacher" style="padding:5px 9px; font-size:13px;"><i class="ti ti-chevron-${openT===i?'up':'down'}" style="font-size:15px;" aria-hidden="true"></i></button>
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 0;">
+        <div style="width:34px; height:34px; border-radius:50%; background:var(--color-background-info); color:var(--color-text-info); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; flex-shrink:0;">${ini(t.n)}</div>
+        <div style="flex:1; min-width:0;"><div style="font-size:14px;">${t.n}</div><div style="font-size:12px; color:var(--color-text-secondary);">${t.classes===0?'No classes yet':t.classes+(t.classes===1?' class':' classes')}</div></div>
+        <span style="font-size:12px; padding:3px 10px; border-radius:var(--border-radius-md); background:${t.role==='Admin'?'var(--color-background-info)':'var(--color-background-secondary)'}; color:${t.role==='Admin'?'var(--color-text-info)':'var(--color-text-secondary)'};">${t.role}</span>
+        <button class="ex" aria-label="Settings for this teacher" style="padding:6px 10px; font-size:13px;"><i class="ti ti-chevron-${openT===i?'up':'down'}" style="font-size:15px;" aria-hidden="true"></i></button>
       </div>
-      <div class="det" style="display:${openT===i?'block':'none'}; padding:4px 0 14px 44px;">
-        <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
-          <label style="font-size:13px; color:var(--color-text-secondary);">Role <select class="role" style="margin-left:6px;"><option ${t.role==='Admin'?'selected':''}>Admin</option><option ${t.role==='Teacher'?'selected':''}>Teacher</option></select></label>
-        </div>
-        <label style="display:flex; align-items:center; justify-content:space-between; max-width:380px; padding:6px 0;"><span style="font-size:13px;">Can spend school seats on students</span><input type="checkbox" checked style="width:17px; height:17px;"/></label>
-        <label style="display:flex; align-items:center; justify-content:space-between; max-width:380px; padding:6px 0;"><span style="font-size:13px;">Can add, remove and invite students</span><input type="checkbox" checked style="width:17px; height:17px;"/></label>
-        ${t.role!=='Admin'?`<button class="rm" style="font-size:12px; margin-top:8px; color:var(--color-text-danger); border-color:var(--color-border-danger);"><i class="ti ti-trash" style="font-size:14px; vertical-align:-2px; margin-right:4px;" aria-hidden="true"></i>Remove from school</button>`:''}
-      </div></div>`).join('') + (teachers.length<total?`<button id="more" style="font-size:13px; margin-top:10px;">Show all ${total} teachers</button>`:'');
+      <div class="det" style="display:${openT===i?'block':'none'}; padding:2px 0 16px 46px;">
+        <div style="margin-bottom:10px;"><label style="font-size:13px; color:var(--color-text-secondary);">This teacher is an</label><br/><select class="role" style="margin-top:5px;"><option ${t.role==='Admin'?'selected':''}>Admin</option><option ${t.role==='Teacher'?'selected':''}>Teacher</option></select></div>
+        ${switchRow('Can give students a subscription','Lets this teacher use up your school&rsquo;s subscriptions.','',true)}
+        ${switchRow('Can add or remove students','Lets this teacher change who is in their classes.','',true)}
+        ${t.role!=='Admin'?`<button class="rm" style="font-size:13px; margin-top:12px; color:var(--color-text-danger); border-color:var(--color-border-danger);"><i class="ti ti-trash" style="font-size:15px; vertical-align:-3px; margin-right:5px;" aria-hidden="true"></i>Remove from school</button>`:`<div style="font-size:12px; color:var(--color-text-tertiary); margin-top:10px;">This is the school owner and cannot be removed.</div>`}
+      </div></div>`).join('') + (teachers.length<total?`<button id="more" style="font-size:13px; margin-top:12px;">Show all ${total} teachers</button>`:'');
     tl.querySelectorAll('.ex').forEach((x,i)=>x.onclick=()=>{openT=openT===i?null:i;teach();});
     tl.querySelectorAll('.role').forEach((s,i)=>s.onchange=()=>{teachers[i].role=s.value;teach();});
     tl.querySelectorAll('.rm').forEach(x=>x.onclick=e=>{const i=+e.currentTarget.closest('[data-i]').dataset.i;const nm=teachers[i].n;teachers.splice(i,1);openT=null;teach();sendPrompt('Removed '+nm+' (demo)');});
     const m=b.querySelector('#more'); if(m)m.onclick=()=>{teachers=teachers.concat([{n:'Ms Chua Li',role:'Teacher',classes:0},{n:'Mr Ong Wei',role:'Teacher',classes:0},{n:'Ms Sim Hwee',role:'Teacher',classes:0}]);teach();};
     b.querySelector('#add').onclick=()=>{adding=!adding;teach();};
-    const si=b.querySelector('#si'); if(si)si.onclick=()=>{const u=b.querySelector('#iu').value.trim();if(u){teachers.unshift({n:u,role:'Teacher',classes:0});adding=false;teach();sendPrompt('Invite sent to '+u+' (demo)');}};
+    const si=b.querySelector('#si'); if(si)si.onclick=()=>{const u=b.querySelector('#iu').value.trim();if(u){teachers.unshift({n:u,role:'Teacher',classes:0});adding=false;teach();sendPrompt('Invite sent to '+u+' (demo)');}else{sendPrompt('Please enter a username first');}};
   }
   teach();
 
-  const classList=['P2-A','P2-I','P2-J','P2-R','P2-S','P2-T','P1-S','P1-A','P1-J','P1-R','P1-T'];
-  const wopts={chineseType:['Let students choose','Only Simplified Chinese','Only Traditional Chinese'],romanization:['Let students choose','Pinyin with tone marks','Pinyin with numbers','Zhuyin / Bopomofo'],customPacks:['Allow custom packs','Do not allow custom packs'],login:['Keep all login buttons','Remove logins of former students']};
-  const wlabel={chineseType:'Chinese characters',romanization:'Romanization',customPacks:'Custom packs',login:'Login buttons'};
-  const writer={chineseType:1,romanization:1,customPacks:1,login:1,shareNotes:false,studentLists:false};
-  const catalog=[];
-  for(let i=19;i>=11;i--)catalog.push({n:'2B Unit '+i,shared:i>14});
-  for(let i=10;i>=1;i--)catalog.push({n:'2A Unit '+String(i).padStart(2,'0'),shared:i>6});
-  ['1B15 v4','1B14 v3','1B13 v2','1B12 v1','1B11'].forEach(n=>catalog.push({n,shared:true}));
-  for(let i=19;i>=1;i--)catalog.push({n:'1A'+String(i).padStart(2,'0'),shared:true});
-  let curClass='P2-A', order='priority';
-  function lists(){
-    const b=body('lists');
-    b.innerHTML=hd('Vocabulary lists','Lists shared with a class, and the Writer rules its students follow')+
-    `<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
-      <span style="font-size:13px; color:var(--color-text-secondary);">Configuring class</span>
-      <select id="cls" style="font-weight:500;">${classList.map(c=>`<option ${c===curClass?'selected':''}>${c}</option>`).join('')}</select>
-      <span style="font-size:13px; color:var(--color-text-secondary);"><span id="sc">${catalog.filter(c=>c.shared).length}</span> of ${catalog.length} shared</span>
-    </div>
-    <div style="font-size:14px; font-weight:500; margin:4px 0 10px;">Writer &amp; Chinese settings</div>
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px;">
-      ${Object.keys(wopts).map(k=>`<div><label style="font-size:13px; color:var(--color-text-secondary);">${wlabel[k]}</label><select data-w="${k}" style="width:100%; margin-top:4px;">${wopts[k].map((o,i)=>`<option ${i===writer[k]?'selected':''}>${o}</option>`).join('')}</select></div>`).join('')}
-    </div>
-    <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:0.5px solid var(--color-border-tertiary); margin-top:12px;"><span style="font-size:14px;">Share my flash-card notes with this class</span><input type="checkbox" data-t="shareNotes" ${writer.shareNotes?'checked':''} style="width:18px; height:18px;"/></label>
-    <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:0.5px solid var(--color-border-tertiary); margin-bottom:18px;"><span style="font-size:14px;">Let students post their own vocab lists</span><input type="checkbox" data-t="studentLists" ${writer.studentLists?'checked':''} style="width:18px; height:18px;"/></label>
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-      <div style="font-size:14px; font-weight:500;">Lists shared with <span id="cn2">${curClass}</span></div>
-      <div style="display:inline-flex; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); overflow:hidden;">
-        <button class="ord" data-o="priority" style="border:none; border-radius:0; font-size:12px; padding:5px 11px; ${order==='priority'?'background:var(--color-background-secondary);':''}">Priority</button>
-        <button class="ord" data-o="abc" style="border:none; border-radius:0; font-size:12px; padding:5px 11px; ${order==='abc'?'background:var(--color-background-secondary);':''}">A&ndash;Z</button>
-      </div>
-    </div>
-    <input id="lq" placeholder="Search lists" style="width:100%; margin-bottom:8px;"/>
-    <div style="display:flex; gap:8px; margin-bottom:10px;"><button id="shareall" style="font-size:12px;">Share all shown</button><button id="assign" style="font-size:12px; ${btnP}">Assign shared to classes…</button></div>
-    <div id="ll"></div>`;
-    const ll=b.querySelector('#ll');
-    function fillRows(){
-      let cat=catalog.slice(); if(order==='abc')cat.sort((a,b)=>a.n.localeCompare(b.n));
-      ll.innerHTML=cat.map(c=>{const idx=catalog.indexOf(c);return `<div data-n="${c.n.toLowerCase()}" style="display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:0.5px solid var(--color-border-tertiary);">
-        <span style="flex:1; font-size:14px;">${c.n}</span>
-        <button class="pv" style="font-size:12px; padding:4px 9px;">Preview</button>
-        <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; min-width:74px; justify-content:flex-end;"><span class="sl" style="font-size:12px; color:${c.shared?'var(--color-text-success)':'var(--color-text-tertiary)'};">${c.shared?'Shared':'Off'}</span><input type="checkbox" data-idx="${idx}" ${c.shared?'checked':''} style="width:17px; height:17px;"/></label>
-      </div>`;}).join('');
-      ll.querySelectorAll('[data-idx]').forEach(cb=>cb.onchange=()=>{const it=catalog[+cb.dataset.idx];it.shared=cb.checked;const lab=cb.parentElement.querySelector('.sl');lab.textContent=cb.checked?'Shared':'Off';lab.style.color=cb.checked?'var(--color-text-success)':'var(--color-text-tertiary)';b.querySelector('#sc').textContent=catalog.filter(c=>c.shared).length;});
-      ll.querySelectorAll('.pv').forEach(x=>x.onclick=()=>sendPrompt('Preview list (demo)'));
-      const q=(b.querySelector('#lq').value||'').toLowerCase().trim();
-      if(q)[...ll.children].forEach(r=>{r.style.display=r.dataset.n.includes(q)?'':'none';});
-    }
-    fillRows();
-    b.querySelector('#cls').onchange=e=>{curClass=e.target.value;b.querySelector('#cn2').textContent=curClass;};
-    b.querySelectorAll('[data-w]').forEach(s=>s.onchange=()=>{writer[s.dataset.w]=s.selectedIndex;sendPrompt(wlabel[s.dataset.w]+' updated (demo)');});
-    b.querySelectorAll('[data-t]').forEach(c=>c.onchange=()=>{writer[c.dataset.t]=c.checked;});
-    b.querySelectorAll('.ord').forEach(x=>x.onclick=()=>{order=x.dataset.o;lists();});
-    b.querySelector('#lq').oninput=e=>{const q=e.target.value.toLowerCase().trim();[...ll.children].forEach(r=>{r.style.display=r.dataset.n.includes(q)?'':'none';});};
-    b.querySelector('#shareall').onclick=()=>{[...ll.children].forEach(r=>{if(r.style.display!=='none'){const cb=r.querySelector('[data-idx]');catalog[+cb.dataset.idx].shared=true;}});fillRows();b.querySelector('#sc').textContent=catalog.filter(c=>c.shared).length;};
-    b.querySelector('#assign').onclick=()=>sendPrompt('Assign shared lists to other classes (demo)');
-  }
-  lists();
+  // ===== EMAIL UPDATES =====
+  (function(){body('notify').innerHTML=hd('Email updates','Choose what we email you about. You can change these any time.')+
+    [['Weekly progress report','A short email each week showing how your students are doing.',false],['Low-subscription warning','We&rsquo;ll let you know before you run out of free subscriptions.',true],['Tips and product news','Occasional ideas for getting more out of trainchinese.',false]]
+    .map(t=>switchRow(t[0],t[1],'',t[2])).join('');})();
 
-  (function(){body('notify').innerHTML=hd('Notifications','What we email you about')+
-    [['Weekly report of my students’ training',false],['Alert when seats are running low',true],['Product updates and tips',false]]
-    .map(t=>`<label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:0.5px solid var(--color-border-tertiary); cursor:pointer;"><span style="font-size:14px;">${t[0]}</span><input type="checkbox" ${t[1]?'checked':''} style="width:18px; height:18px;"/></label>`).join('');})();
-
-  (function(){const rows=[['ti-user','Display name','Riverview'],['ti-mail','Login email','admin@riverview.edu'],['ti-lock','Password','••••••••'],['ti-world','Country','Other'],['ti-language','Interface language','English']];
-    body('account').innerHTML=hd('Account','Your login and interface preferences')+rows.map(([ic,l,v])=>`<button style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 0; border:none; border-bottom:0.5px solid var(--color-border-tertiary); background:none; border-radius:0; cursor:pointer; text-align:left;"><i class="ti ${ic}" style="font-size:18px; color:var(--color-text-secondary);" aria-hidden="true"></i><span style="flex:1; font-size:14px;">${l}</span><span style="font-size:14px; color:var(--color-text-secondary);">${v}</span><i class="ti ti-chevron-right" style="font-size:16px; color:var(--color-text-tertiary);" aria-hidden="true"></i></button>`).join('');})();
+  // ===== YOUR ACCOUNT =====
+  (function(){const rows=[['ti-user','Your display name','Riverview','The name shown next to your messages.'],['ti-mail','Login email','admin@riverview.edu','Used to log in and reset your password.'],['ti-lock','Password','Last changed recently','Keep your account secure.'],['ti-world','Country','Other',''],['ti-language','App language','English','The language of these menus.']];
+    body('account').innerHTML=hd('Your account','Your personal login and language. These are just for you, not your whole school.')+rows.map(([ic,l,v,d])=>`<button style="width:100%; display:flex; align-items:center; gap:14px; padding:13px 0; border:none; border-bottom:0.5px solid var(--color-border-tertiary); background:none; border-radius:0; cursor:pointer; text-align:left;"><i class="ti ${ic}" style="font-size:19px; color:var(--color-text-secondary); flex-shrink:0;" aria-hidden="true"></i><span style="flex:1; min-width:0;"><span style="font-size:14px; display:block;">${l}</span>${d?`<span style="font-size:12px; color:var(--color-text-tertiary); display:block; margin-top:1px;">${d}</span>`:''}</span><span style="font-size:14px; color:var(--color-text-secondary); white-space:nowrap;">${v}</span><i class="ti ti-chevron-right" style="font-size:17px; color:var(--color-text-tertiary); flex-shrink:0;" aria-hidden="true"></i></button>`).join('')+`<div style="font-size:12px; color:var(--color-text-tertiary); margin-top:14px;">Tap any row above to change it.</div>`;})();
 
   if('IntersectionObserver' in window){
     const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)setActive(e.target.id.replace('s-',''));});},{rootMargin:'-10% 0px -70% 0px'});
