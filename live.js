@@ -131,8 +131,8 @@
     if(!classes.length){b.innerHTML=hd('Word lists','',true)+'<div style="color:var(--ts)">No classes yet.</div>';return;}
     if(!ls.gid)ls.gid=classes[0].gid;
     var opts=classes.map(function(c){return '<option value="'+c.gid+'"'+(c.gid===ls.gid?' selected':'')+'>'+c.name+'</option>';}).join('');
-    b.innerHTML=hd('Word lists','Tick a list to add it to a class. This saves to your account.',true)
-      +'<div style="font-size:13px;color:var(--ts);margin-bottom:12px">Reading and saving which lists each class studies is live. The Chinese-display settings are still <span class="pill prev">preview</span>.</div>'
+    b.innerHTML=hd('Word lists','Tick a list to add it to a class — newly wired to save on your account.',true)
+      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-flask" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5"><strong style="font-weight:500">Newly wired (beta).</strong> Pick a class with students (e.g. P2-A), toggle a list, then press Refresh to check it stuck. The Chinese-display settings are still <span class="pill prev">preview</span>.</span></div>'
       +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span style="font-size:14px">Set up class '+qm('Each class has its own word lists. Pick a class, then tick the lists it studies.')+'</span><select id="l-cls">'+opts+'</select><span id="l-count" style="font-size:13px;color:var(--ts)"></span><button id="l-rl" style="font-size:12px;padding:6px 10px">Refresh</button></div>'
       +'<input id="l-q" placeholder="Search lists" style="width:100%;margin-bottom:8px"/>'
       +'<div id="l-area" style="color:var(--ts)">Reading this class’s lists…</div>';
