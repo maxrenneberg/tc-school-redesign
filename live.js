@@ -161,7 +161,7 @@
     var area=document.querySelector('#ts-students #st-area'); if(!area)return;
     var cnt=document.querySelector('#ts-students #st-count'); if(cnt)cnt.textContent=st.rows.filter(function(r){return r.inClass;}).length+' in this class';
     var rows=st.rows.filter(function(r){return !st.q||(r.name+' '+r.user).toLowerCase().indexOf(st.q)>=0;});
-    area.innerHTML=rows.length?rows.map(function(r){var idx=st.rows.indexOf(r);return '<label class="tcr-row" style="cursor:pointer"><input type="checkbox" data-i="'+idx+'"'+(r.inClass?' checked':'')+'/><span style="flex:1;font-size:14px">'+r.name+(r.user?' <span style="color:var(--ts);font-size:12px">'+r.user+'</span>':'')+'</span><span style="font-size:12px;min-width:84px;text-align:right;color:'+(r.inClass?'var(--tok)':'var(--tt)')+'">'+(r.inClass?'In class':'Not in class')+'</span></label>';}).join(''):'<div style="color:var(--ts);padding:8px 0">No students match.</div>';
+    area.innerHTML=rows.length?rows.map(function(r){var idx=st.rows.indexOf(r);return '<label class="tcr-row" style="cursor:pointer"><input type="checkbox" data-i="'+idx+'"'+(r.inClass?' checked':'')+'/><span style="flex:1;font-size:14px">'+r.name+' <span style="color:var(--ts);font-size:12px">'+(r.user||('id '+r.studentId))+'</span></span><span style="font-size:12px;min-width:84px;text-align:right;color:'+(r.inClass?'var(--tok)':'var(--tt)')+'">'+(r.inClass?'In class':'Not in class')+'</span></label>';}).join(''):'<div style="color:var(--ts);padding:8px 0">No students match.</div>';
     [].forEach.call(area.querySelectorAll('input[type=checkbox]'),function(cb){cb.onchange=function(){saveStudent(parseInt(cb.getAttribute('data-i'),10),cb);};});
   }
   function saveStudent(idx,cb){
