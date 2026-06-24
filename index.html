@@ -66,6 +66,7 @@
   let toastT; const sendPrompt=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600);};
   const sections=[
     ['profile','ti-building','School'],
+    ['lists','ti-books','Lists'],
     ['seats','ti-license','Seats'],
     ['teachers','ti-users','Teachers'],
     ['notify','ti-bell','Notifications'],
@@ -191,6 +192,64 @@
     const si=b.querySelector('#si'); if(si)si.onclick=()=>{const u=b.querySelector('#iu').value.trim();if(u){teachers.unshift({n:u,role:'Teacher',classes:0});adding=false;teach();sendPrompt('Invite sent to '+u+' (demo)');}};
   }
   teach();
+
+  const classList=['P2-A','P2-I','P2-J','P2-R','P2-S','P2-T','P1-S','P1-A','P1-J','P1-R','P1-T'];
+  const wopts={chineseType:['Let students choose','Only Simplified Chinese','Only Traditional Chinese'],romanization:['Let students choose','Pinyin with tone marks','Pinyin with numbers','Zhuyin / Bopomofo'],customPacks:['Allow custom packs','Do not allow custom packs'],login:['Keep all login buttons','Remove logins of former students']};
+  const wlabel={chineseType:'Chinese characters',romanization:'Romanization',customPacks:'Custom packs',login:'Login buttons'};
+  const writer={chineseType:1,romanization:1,customPacks:1,login:1,shareNotes:false,studentLists:false};
+  const catalog=[];
+  for(let i=19;i>=11;i--)catalog.push({n:'2B Unit '+i,shared:i>14});
+  for(let i=10;i>=1;i--)catalog.push({n:'2A Unit '+String(i).padStart(2,'0'),shared:i>6});
+  ['1B15 v4','1B14 v3','1B13 v2','1B12 v1','1B11'].forEach(n=>catalog.push({n,shared:true}));
+  for(let i=19;i>=1;i--)catalog.push({n:'1A'+String(i).padStart(2,'0'),shared:true});
+  let curClass='P2-A', order='priority';
+  function lists(){
+    const b=body('lists');
+    b.innerHTML=hd('Vocabulary lists','Lists shared with a class, and the Writer rules its students follow')+
+    `<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+      <span style="font-size:13px; color:var(--color-text-secondary);">Configuring class</span>
+      <select id="cls" style="font-weight:500;">${classList.map(c=>`<option ${c===curClass?'selected':''}>${c}</option>`).join('')}</select>
+      <span style="font-size:13px; color:var(--color-text-secondary);"><span id="sc">${catalog.filter(c=>c.shared).length}</span> of ${catalog.length} shared</span>
+    </div>
+    <div style="font-size:14px; font-weight:500; margin:4px 0 10px;">Writer &amp; Chinese settings</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px;">
+      ${Object.keys(wopts).map(k=>`<div><label style="font-size:13px; color:var(--color-text-secondary);">${wlabel[k]}</label><select data-w="${k}" style="width:100%; margin-top:4px;">${wopts[k].map((o,i)=>`<option ${i===writer[k]?'selected':''}>${o}</option>`).join('')}</select></div>`).join('')}
+    </div>
+    <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:0.5px solid var(--color-border-tertiary); margin-top:12px;"><span style="font-size:14px;">Share my flash-card notes with this class</span><input type="checkbox" data-t="shareNotes" ${writer.shareNotes?'checked':''} style="width:18px; height:18px;"/></label>
+    <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:0.5px solid var(--color-border-tertiary); margin-bottom:18px;"><span style="font-size:14px;">Let students post their own vocab lists</span><input type="checkbox" data-t="studentLists" ${writer.studentLists?'checked':''} style="width:18px; height:18px;"/></label>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+      <div style="font-size:14px; font-weight:500;">Lists shared with <span id="cn2">${curClass}</span></div>
+      <div style="display:inline-flex; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); overflow:hidden;">
+        <button class="ord" data-o="priority" style="border:none; border-radius:0; font-size:12px; padding:5px 11px; ${order==='priority'?'background:var(--color-background-secondary);':''}">Priority</button>
+        <button class="ord" data-o="abc" style="border:none; border-radius:0; font-size:12px; padding:5px 11px; ${order==='abc'?'background:var(--color-background-secondary);':''}">A&ndash;Z</button>
+      </div>
+    </div>
+    <input id="lq" placeholder="Search lists" style="width:100%; margin-bottom:8px;"/>
+    <div style="display:flex; gap:8px; margin-bottom:10px;"><button id="shareall" style="font-size:12px;">Share all shown</button><button id="assign" style="font-size:12px; ${btnP}">Assign shared to classes…</button></div>
+    <div id="ll"></div>`;
+    const ll=b.querySelector('#ll');
+    function fillRows(){
+      let cat=catalog.slice(); if(order==='abc')cat.sort((a,b)=>a.n.localeCompare(b.n));
+      ll.innerHTML=cat.map(c=>{const idx=catalog.indexOf(c);return `<div data-n="${c.n.toLowerCase()}" style="display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:0.5px solid var(--color-border-tertiary);">
+        <span style="flex:1; font-size:14px;">${c.n}</span>
+        <button class="pv" style="font-size:12px; padding:4px 9px;">Preview</button>
+        <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; min-width:74px; justify-content:flex-end;"><span class="sl" style="font-size:12px; color:${c.shared?'var(--color-text-success)':'var(--color-text-tertiary)'};">${c.shared?'Shared':'Off'}</span><input type="checkbox" data-idx="${idx}" ${c.shared?'checked':''} style="width:17px; height:17px;"/></label>
+      </div>`;}).join('');
+      ll.querySelectorAll('[data-idx]').forEach(cb=>cb.onchange=()=>{const it=catalog[+cb.dataset.idx];it.shared=cb.checked;const lab=cb.parentElement.querySelector('.sl');lab.textContent=cb.checked?'Shared':'Off';lab.style.color=cb.checked?'var(--color-text-success)':'var(--color-text-tertiary)';b.querySelector('#sc').textContent=catalog.filter(c=>c.shared).length;});
+      ll.querySelectorAll('.pv').forEach(x=>x.onclick=()=>sendPrompt('Preview list (demo)'));
+      const q=(b.querySelector('#lq').value||'').toLowerCase().trim();
+      if(q)[...ll.children].forEach(r=>{r.style.display=r.dataset.n.includes(q)?'':'none';});
+    }
+    fillRows();
+    b.querySelector('#cls').onchange=e=>{curClass=e.target.value;b.querySelector('#cn2').textContent=curClass;};
+    b.querySelectorAll('[data-w]').forEach(s=>s.onchange=()=>{writer[s.dataset.w]=s.selectedIndex;sendPrompt(wlabel[s.dataset.w]+' updated (demo)');});
+    b.querySelectorAll('[data-t]').forEach(c=>c.onchange=()=>{writer[c.dataset.t]=c.checked;});
+    b.querySelectorAll('.ord').forEach(x=>x.onclick=()=>{order=x.dataset.o;lists();});
+    b.querySelector('#lq').oninput=e=>{const q=e.target.value.toLowerCase().trim();[...ll.children].forEach(r=>{r.style.display=r.dataset.n.includes(q)?'':'none';});};
+    b.querySelector('#shareall').onclick=()=>{[...ll.children].forEach(r=>{if(r.style.display!=='none'){const cb=r.querySelector('[data-idx]');catalog[+cb.dataset.idx].shared=true;}});fillRows();b.querySelector('#sc').textContent=catalog.filter(c=>c.shared).length;};
+    b.querySelector('#assign').onclick=()=>sendPrompt('Assign shared lists to other classes (demo)');
+  }
+  lists();
 
   (function(){body('notify').innerHTML=hd('Notifications','What we email you about')+
     [['Weekly report of my students’ training',false],['Alert when seats are running low',true],['Product updates and tips',false]]
