@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>School settings — redesign prototype</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.34.1/tabler-icons.min.css"/>
+<style>
+  :root{
+    --color-background-primary:#ffffff; --color-background-secondary:#f4f3ee; --color-background-tertiary:#eceae3;
+    --color-background-info:#e6f1fb; --color-background-success:#e1f5ee; --color-background-warning:#faeeda; --color-background-danger:#fcebeb;
+    --color-text-primary:#1d1c1a; --color-text-secondary:#5f5e5a; --color-text-tertiary:#8a8980;
+    --color-text-info:#185fa5; --color-text-success:#0f6e56; --color-text-warning:#854f0b; --color-text-danger:#a32d2d;
+    --color-border-tertiary:rgba(0,0,0,0.12); --color-border-secondary:rgba(0,0,0,0.22); --color-border-info:#378add; --color-border-danger:#e24b4a;
+    --border-radius-md:8px; --border-radius-lg:12px;
+    --font-sans:-apple-system,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; --font-mono:ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --color-background-primary:#26251f; --color-background-secondary:#2f2e27; --color-background-tertiary:#3a392f;
+    --color-background-info:#0c2238; --color-background-success:#08332a; --color-background-warning:#3a2a0c; --color-background-danger:#3a1717;
+    --color-text-primary:#f3f1e9; --color-text-secondary:#b4b2a9; --color-text-tertiary:#888780;
+    --color-text-info:#85b7eb; --color-text-success:#5dcaa5; --color-text-warning:#fac775; --color-text-danger:#f09595;
+    --color-border-tertiary:rgba(255,255,255,0.14); --color-border-secondary:rgba(255,255,255,0.26);
+  }}
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--color-background-tertiary); color:var(--color-text-primary); font-family:var(--font-sans); line-height:1.5;}
+  .wrap{max-width:1080px; margin:0 auto; padding:28px 22px 80px;}
+  button{font-family:inherit; font-size:14px; color:var(--color-text-primary); background:transparent; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); padding:7px 13px; cursor:pointer; transition:background .12s,transform .05s;}
+  button:hover{background:var(--color-background-secondary);} button:active{transform:scale(0.98);}
+  input,select{font-family:inherit; font-size:14px; color:var(--color-text-primary); background:var(--color-background-primary); border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); height:36px; padding:0 10px;}
+  input[type=checkbox]{height:auto; accent-color:#9E2A2A;}
+  select{height:36px;} label{line-height:1.4;}
+  .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;}
+  #toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--color-text-primary); color:var(--color-background-primary); padding:10px 16px; border-radius:var(--border-radius-md); font-size:13px; opacity:0; pointer-events:none; transition:.2s; z-index:50; max-width:90%;}
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0);}
+  .demo-banner{max-width:1080px; margin:0 auto 0; padding:8px 22px; font-size:12px; color:var(--color-text-secondary); text-align:center;}
+</style>
+</head>
+<body>
+<div class="demo-banner">Interactive redesign prototype — demo data, not connected to a live account. Actions show a toast instead of saving.</div>
+<div class="wrap">
+<h2 class="sr-only">Redesigned trainchinese school settings: school profile, seat licensing, teacher roles, notifications and account.</h2>
+<div style="font-family:var(--font-sans); color:var(--color-text-primary); display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;">
+
+  <aside id="side" style="flex:0 0 168px; position:sticky; top:16px;">
+    <div style="display:flex; align-items:center; gap:7px; padding:4px 8px 14px;">
+      <span style="font-size:17px; font-weight:500; letter-spacing:-0.3px;">trainchinese</span>
+      <span style="display:inline-flex; gap:2px;"><span style="width:5px; height:5px; background:#EF9F27; border-radius:50%;"></span><span style="width:5px; height:5px; background:#9E2A2A; border-radius:50%;"></span></span>
+    </div>
+    <div style="font-size:12px; color:var(--color-text-tertiary); text-transform:uppercase; letter-spacing:0.5px; padding:0 8px 8px;">School settings</div>
+    <nav id="nav" style="display:flex; flex-direction:column; gap:2px;"></nav>
+  </aside>
+
+  <main id="main" style="flex:1; min-width:280px; display:flex; flex-direction:column; gap:16px;"></main>
+</div>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+  const RED='#9E2A2A';
+  const $=h=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstChild;};
+  const main=document.getElementById('main'), navEl=document.getElementById('nav');
+  const round=n=>Math.round(n);
+  const btnP=`background:${RED}; border:0.5px solid ${RED}; color:#fff;`;
+  let toastT; const sendPrompt=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600);};
+  const sections=[
+    ['profile','ti-building','School'],
+    ['seats','ti-license','Seats'],
+    ['teachers','ti-users','Teachers'],
+    ['notify','ti-bell','Notifications'],
+    ['account','ti-user-cog','Account']
+  ];
+  sections.forEach(([id,ic,label])=>{
+    const a=$(`<a href="#" data-id="${id}" style="display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:var(--border-radius-md); font-size:14px; color:var(--color-text-secondary); border-left:3px solid transparent; text-decoration:none;"><i class="ti ${ic}" style="font-size:17px;" aria-hidden="true"></i>${label}</a>`);
+    a.onclick=e=>{e.preventDefault();document.getElementById('s-'+id).scrollIntoView({behavior:'smooth',block:'start'});};
+    navEl.appendChild(a);
+    main.appendChild($(`<section id="s-${id}" style="background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:18px 20px; scroll-margin-top:16px;"><div class="body"></div></section>`));
+  });
+  const setActive=id=>navEl.querySelectorAll('a').forEach(a=>{const on=a.dataset.id===id;a.style.color=on?RED:'var(--color-text-secondary)';a.style.borderLeftColor=on?RED:'transparent';a.style.fontWeight=on?'500':'400';});
+  setActive('profile');
+  const body=id=>document.querySelector('#s-'+id+' .body');
+  const hd=(t,s)=>`<div style="margin-bottom:14px;"><div style="font-size:16px; font-weight:500;">${t}</div>${s?`<div style="font-size:13px; color:var(--color-text-secondary); margin-top:2px;">${s}</div>`:''}</div>`;
+  const tile=(l,v,warn)=>`<div style="background:${warn?'var(--color-background-warning)':'var(--color-background-secondary)'}; border-radius:var(--border-radius-md); padding:10px 12px;"><div style="font-size:12px; color:var(--color-text-secondary);">${l}</div><div style="font-size:22px; font-weight:500; margin-top:2px; color:${warn?'var(--color-text-warning)':'inherit'};">${v}</div></div>`;
+  const bar=(p,col)=>`<div style="height:9px; background:var(--color-border-tertiary); border-radius:5px; overflow:hidden;"><div style="height:100%; width:${p}%; background:${col};"></div></div>`;
+
+  const sp={name:'Riverview',type:'Riverview Primary School',students:280,chars:'Simplified',textbooks:'Not set'};
+  function profile(edit){
+    const b=body('profile'); const rows=[['School name','name'],['School type','type'],['Number of students','students'],['Textbooks used','textbooks']];
+    if(!edit){
+      b.innerHTML=hd('School profile','Basic information about your school')+
+      `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px;">
+        ${rows.map(([l,k])=>`<div><div style="font-size:13px; color:var(--color-text-secondary);">${l}</div><div style="font-size:15px; margin-top:2px;">${sp[k]}</div></div>`).join('')}
+        <div><div style="font-size:13px; color:var(--color-text-secondary);">Character set</div><div style="margin-top:4px;"><span style="font-size:13px; background:var(--color-background-secondary); padding:3px 10px; border-radius:var(--border-radius-md);">${sp.chars} Chinese</span></div></div>
+      </div><button id="e" style="margin-top:16px; font-size:13px;"><i class="ti ti-edit" style="font-size:15px; vertical-align:-2px; margin-right:5px;" aria-hidden="true"></i>Edit profile</button>`;
+      b.querySelector('#e').onclick=()=>profile(true);
+    } else {
+      b.innerHTML=hd('School profile','Editing')+
+      `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;">
+        ${rows.map(([l,k])=>`<div><label style="font-size:13px; color:var(--color-text-secondary);">${l}</label><input data-k="${k}" value="${sp[k]}" style="width:100%; margin-top:4px;"/></div>`).join('')}
+        <div><label style="font-size:13px; color:var(--color-text-secondary);">Character set</label><select data-k="chars" style="width:100%; margin-top:4px;"><option ${sp.chars==='Simplified'?'selected':''}>Simplified</option><option ${sp.chars==='Traditional'?'selected':''}>Traditional</option></select></div>
+      </div><div style="margin-top:16px; display:flex; gap:8px;"><button id="sv" style="font-size:13px; ${btnP}">Save</button><button id="cn" style="font-size:13px;">Cancel</button></div>`;
+      b.querySelector('#sv').onclick=()=>{b.querySelectorAll('[data-k]').forEach(i=>sp[i.dataset.k]=i.value);profile(false);sendPrompt('School profile saved (demo)');};
+      b.querySelector('#cn').onclick=()=>profile(false);
+    }
+  }
+  profile(false);
+
+  const active={total:300,used:275,avail:25,until:'30 Apr 2027'};
+  const alloc=[['P2-A',32],['P2-R',31],['P2-S',31],['P2-T',31],['P1-R',30],['P1-A',29],['P1-T',29],['P1-J',28],['P1-S',17],['P2-I',15],['P2-J',0]];
+  let holders=['Aiden Tan','Bella Ng','Caleb Lim','Daria Koh','Ethan Goh','Faith Wong'];
+  const codes=[{code:'WRT-2027-A',total:300,used:275,until:'30 Apr 2027',status:'Active'},{code:'WRT-2026-A',total:330,used:291,until:'28 Feb 2026',status:'Expired'}];
+  let showCodes=false, showHolders=false;
+  function seats(){
+    const b=body('seats'); const mx=Math.max(...alloc.map(a=>a[1]));
+    b.innerHTML=hd('Student seats','Subscriptions you assign to students')+
+    `<div style="background:var(--color-background-warning); border-radius:var(--border-radius-md); padding:10px 14px; display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+      <i class="ti ti-alert-triangle" style="font-size:18px; color:var(--color-text-warning);" aria-hidden="true"></i>
+      <span style="font-size:13px; color:var(--color-text-warning); flex:1; min-width:160px;">Only ${active.avail} seats left, license renews ${active.until}.</span>
+      <button id="renew" style="font-size:12px; ${btnP} padding:5px 11px;">Renew</button>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;"><span style="font-size:14px;">${active.used} of ${active.total} seats in use</span><span style="font-size:13px; color:var(--color-text-secondary);">${active.avail} available</span></div>
+    ${bar(round(active.used/active.total*100),RED)}
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(108px,1fr)); gap:10px; margin:16px 0;">
+      ${tile('Total',active.total)}${tile('In use',active.used)}${tile('Available',active.avail,true)}
+    </div>
+    <div style="font-size:14px; font-weight:500; margin:6px 0 10px;">Seats used by class</div>
+    <div style="display:flex; flex-direction:column; gap:7px;">
+      ${alloc.map(([n,c])=>`<div style="display:flex; align-items:center; gap:10px;"><span style="font-size:13px; width:42px; flex-shrink:0;">${n}</span><div style="flex:1;">${bar(c/mx*100,'#378ADD')}</div><span style="font-size:12px; color:var(--color-text-secondary); width:22px; text-align:right;">${c}</span></div>`).join('')}
+    </div>
+    <button id="ht" style="font-size:13px; margin-top:14px;"><i class="ti ti-chevron-down" style="font-size:15px; vertical-align:-2px;" aria-hidden="true"></i> Recent seat holders</button>
+    <div id="hd" style="display:none; margin-top:10px;"></div>
+    <button id="ct" style="font-size:13px; margin-top:10px; display:block;"><i class="ti ti-chevron-down" style="font-size:15px; vertical-align:-2px;" aria-hidden="true"></i> All subscription codes (${codes.length})</button>
+    <div id="cd" style="display:none; margin-top:10px;"></div>`;
+    const hdv=b.querySelector('#hd');
+    hdv.innerHTML=holders.map(n=>`<div data-n="${n}" style="display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><span style="flex:1; font-size:14px;">${n}</span><span style="font-size:12px; color:var(--color-text-success);">Seat active</span><button class="rc" style="font-size:12px; padding:4px 9px;">Reclaim</button></div>`).join('');
+    hdv.querySelectorAll('.rc').forEach(x=>x.onclick=e=>{const n=e.currentTarget.closest('[data-n]').dataset.n;holders=holders.filter(h=>h!==n);active.used--;active.avail++;showHolders=true;seats();sendPrompt('Seat reclaimed from '+n+' (demo)');});
+    const cdv=b.querySelector('#cd');
+    cdv.innerHTML=codes.map(c=>`<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><div><div style="font-size:14px; font-family:var(--font-mono);">${c.code}</div><div style="font-size:12px; color:var(--color-text-secondary);">until ${c.until}</div></div><span style="font-size:13px; color:var(--color-text-secondary);">${c.used}/${c.total}</span><span style="font-size:12px; padding:3px 9px; border-radius:var(--border-radius-md); background:${c.status==='Active'?'var(--color-background-success)':'var(--color-background-tertiary)'}; color:${c.status==='Active'?'var(--color-text-success)':'var(--color-text-tertiary)'};">${c.status}</span></div>`).join('');
+    if(showHolders){hdv.style.display='block';b.querySelector('#ht i').className='ti ti-chevron-up';}
+    if(showCodes){cdv.style.display='block';b.querySelector('#ct i').className='ti ti-chevron-up';}
+    b.querySelector('#ht').onclick=()=>{showHolders=!showHolders;seats();};
+    b.querySelector('#ct').onclick=()=>{showCodes=!showCodes;seats();};
+    b.querySelector('#renew').onclick=()=>sendPrompt('Renew / buy more seats (demo)');
+  }
+  seats();
+
+  let teachers=[
+    {n:'Riverview (you)',role:'Admin',classes:11},
+    {n:'Ms Tan Wei',role:'Teacher',classes:1},
+    {n:'Mr Lim Jun',role:'Teacher',classes:0},
+    {n:'Ms Ng Hui',role:'Teacher',classes:0},
+    {n:'Mr Koh Ren',role:'Teacher',classes:0},
+    {n:'Ms Goh Mei',role:'Teacher',classes:0},
+    {n:'Mr Lee Han',role:'Teacher',classes:0},
+    {n:'demo1',role:'Teacher',classes:0}
+  ];
+  const total=22; let openT=null, adding=false;
+  function teach(){
+    const b=body('teachers');
+    const ini=n=>n.replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('')||'T';
+    b.innerHTML=hd('Teachers','People who can manage classes — '+total+' total')+
+    `<div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><button id="add" style="font-size:13px; ${btnP}"><i class="ti ti-user-plus" style="font-size:15px; vertical-align:-2px; margin-right:5px;" aria-hidden="true"></i>Invite teacher</button></div>
+    <div id="af" style="display:${adding?'block':'none'}; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:14px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;"><div><label style="font-size:13px; color:var(--color-text-secondary);">Email</label><input id="ie" type="email" placeholder="teacher@school.edu" style="width:100%; margin-top:4px;"/></div><div><label style="font-size:13px; color:var(--color-text-secondary);">Username</label><input id="iu" placeholder="ms_lim" style="width:100%; margin-top:4px;"/></div></div>
+      <div style="font-size:12px; color:var(--color-text-secondary); margin:8px 0;">If not registered, we create the account and email login details.</div>
+      <button id="si" style="font-size:13px; ${btnP}">Send invite</button>
+    </div>
+    <div id="tl"></div>`;
+    const tl=b.querySelector('#tl');
+    tl.innerHTML=teachers.map((t,i)=>`<div data-i="${i}" style="border-bottom:0.5px solid var(--color-border-tertiary);">
+      <div style="display:flex; align-items:center; gap:12px; padding:9px 0;">
+        <div style="width:32px; height:32px; border-radius:50%; background:var(--color-background-info); color:var(--color-text-info); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; flex-shrink:0;">${ini(t.n)}</div>
+        <div style="flex:1; min-width:0;"><div style="font-size:14px;">${t.n}</div><div style="font-size:12px; color:var(--color-text-secondary);">${t.classes} ${t.classes===1?'class':'classes'}</div></div>
+        <span style="font-size:12px; padding:3px 9px; border-radius:var(--border-radius-md); background:${t.role==='Admin'?'var(--color-background-info)':'var(--color-background-secondary)'}; color:${t.role==='Admin'?'var(--color-text-info)':'var(--color-text-secondary)'};">${t.role}</span>
+        <button class="ex" aria-label="Edit teacher" style="padding:5px 9px; font-size:13px;"><i class="ti ti-chevron-${openT===i?'up':'down'}" style="font-size:15px;" aria-hidden="true"></i></button>
+      </div>
+      <div class="det" style="display:${openT===i?'block':'none'}; padding:4px 0 14px 44px;">
+        <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+          <label style="font-size:13px; color:var(--color-text-secondary);">Role <select class="role" style="margin-left:6px;"><option ${t.role==='Admin'?'selected':''}>Admin</option><option ${t.role==='Teacher'?'selected':''}>Teacher</option></select></label>
+        </div>
+        <label style="display:flex; align-items:center; justify-content:space-between; max-width:380px; padding:6px 0;"><span style="font-size:13px;">Can spend school seats on students</span><input type="checkbox" checked style="width:17px; height:17px;"/></label>
+        <label style="display:flex; align-items:center; justify-content:space-between; max-width:380px; padding:6px 0;"><span style="font-size:13px;">Can add, remove and invite students</span><input type="checkbox" checked style="width:17px; height:17px;"/></label>
+        ${t.role!=='Admin'?`<button class="rm" style="font-size:12px; margin-top:8px; color:var(--color-text-danger); border-color:var(--color-border-danger);"><i class="ti ti-trash" style="font-size:14px; vertical-align:-2px; margin-right:4px;" aria-hidden="true"></i>Remove from school</button>`:''}
+      </div></div>`).join('') + (teachers.length<total?`<button id="more" style="font-size:13px; margin-top:10px;">Show all ${total} teachers</button>`:'');
+    tl.querySelectorAll('.ex').forEach((x,i)=>x.onclick=()=>{openT=openT===i?null:i;teach();});
+    tl.querySelectorAll('.role').forEach((s,i)=>s.onchange=()=>{teachers[i].role=s.value;teach();});
+    tl.querySelectorAll('.rm').forEach(x=>x.onclick=e=>{const i=+e.currentTarget.closest('[data-i]').dataset.i;const nm=teachers[i].n;teachers.splice(i,1);openT=null;teach();sendPrompt('Removed '+nm+' (demo)');});
+    const m=b.querySelector('#more'); if(m)m.onclick=()=>{teachers=teachers.concat([{n:'Ms Chua Li',role:'Teacher',classes:0},{n:'Mr Ong Wei',role:'Teacher',classes:0},{n:'Ms Sim Hwee',role:'Teacher',classes:0}]);teach();};
+    b.querySelector('#add').onclick=()=>{adding=!adding;teach();};
+    const si=b.querySelector('#si'); if(si)si.onclick=()=>{const u=b.querySelector('#iu').value.trim();if(u){teachers.unshift({n:u,role:'Teacher',classes:0});adding=false;teach();sendPrompt('Invite sent to '+u+' (demo)');}};
+  }
+  teach();
+
+  (function(){body('notify').innerHTML=hd('Notifications','What we email you about')+
+    [['Weekly report of my students’ training',false],['Alert when seats are running low',true],['Product updates and tips',false]]
+    .map(t=>`<label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:0.5px solid var(--color-border-tertiary); cursor:pointer;"><span style="font-size:14px;">${t[0]}</span><input type="checkbox" ${t[1]?'checked':''} style="width:18px; height:18px;"/></label>`).join('');})();
+
+  (function(){const rows=[['ti-user','Display name','Riverview'],['ti-mail','Login email','admin@riverview.edu'],['ti-lock','Password','••••••••'],['ti-world','Country','Other'],['ti-language','Interface language','English']];
+    body('account').innerHTML=hd('Account','Your login and interface preferences')+rows.map(([ic,l,v])=>`<button style="width:100%; display:flex; align-items:center; gap:12px; padding:11px 0; border:none; border-bottom:0.5px solid var(--color-border-tertiary); background:none; border-radius:0; cursor:pointer; text-align:left;"><i class="ti ${ic}" style="font-size:18px; color:var(--color-text-secondary);" aria-hidden="true"></i><span style="flex:1; font-size:14px;">${l}</span><span style="font-size:14px; color:var(--color-text-secondary);">${v}</span><i class="ti ti-chevron-right" style="font-size:16px; color:var(--color-text-tertiary);" aria-hidden="true"></i></button>`).join('');})();
+
+  if('IntersectionObserver' in window){
+    const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)setActive(e.target.id.replace('s-',''));});},{rootMargin:'-10% 0px -70% 0px'});
+    sections.forEach(([id])=>obs.observe(document.getElementById('s-'+id)));
+  }
+})();
+</script>
+</body>
+</html>
