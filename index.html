@@ -208,7 +208,7 @@
     {name:'Marcus Yeo',user:'marcus_yeo',sub:true,cls:'P1-A'},
     {name:'Quentin Low',user:'quentin_low',sub:false,cls:null},{name:'Rina Goh',user:'rina_goh',sub:false,cls:null},{name:'Sam Tan',user:'sam_tan',sub:true,cls:null}
   ];
-  let sFilter='P2-A', sAdd=false, sOpen=null; const sSel=new Set();
+  let sFilter='P2-A', sAdd=false, sOpen=null, sMethod='link', createdResult=null; const sSel=new Set();
   function studentsView(){
     const b=body('students');
     const visible=students.filter(s=> sFilter==='ALL'?true : sFilter==='NONE'? s.cls===null : s.cls===sFilter);
@@ -228,11 +228,14 @@
     </div>
     ${sFilter==='NONE'&&visible.length?`<div style="display:flex; gap:9px; background:var(--color-background-warning); border-radius:var(--border-radius-md); padding:11px 13px; margin-bottom:14px;"><i class="ti ti-alert-triangle" style="font-size:17px; color:var(--color-text-warning); flex-shrink:0;" aria-hidden="true"></i><span style="font-size:13px; color:var(--color-text-warning);">These students aren&rsquo;t studying anything yet. Open a student and choose a class to get them started.</span></div>`:''}
     <div id="saddpanel" style="display:${sAdd?'block':'none'}; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:16px; margin-bottom:14px;">
-      <div style="font-size:14px; font-weight:500; margin-bottom:10px;">Add students ${qm('Two easy ways: share one link with your whole class, or add a student one at a time by email or nickname.')}</div>
-      <div style="font-size:13px; margin-bottom:5px;">1. Share this link with your class &mdash; anyone who opens it joins your school</div>
-      <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;"><input id="ilink" readonly value="${inviteLink}" style="flex:1; min-width:200px;"/><button id="copy" style="font-size:13px;"><i class="ti ti-copy" style="font-size:15px; vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Copy link</button></div>
-      <div style="font-size:13px; margin-bottom:5px;">2. Or add one student by email or nickname</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;"><input id="saddname" placeholder="email address or nickname" style="flex:1; min-width:200px;"/><button id="saddbtn" style="font-size:13px; ${btnP}">Add to ${sFilter==='ALL'||sFilter==='NONE'?'school':sFilter}</button></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;">
+        <div style="font-size:15px; font-weight:500;">Add students ${qm('Four ways to add students &mdash; pick whichever suits you.')}</div>
+        <button id="saddclose" aria-label="Close" style="padding:5px 9px; font-size:13px;"><i class="ti ti-x" style="font-size:15px;" aria-hidden="true"></i></button>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+        ${[['link','ti-link','Share a link'],['email','ti-at','By email / nickname'],['create','ti-user-plus','Create accounts'],['existing','ti-search','Add existing']].map(([m,ic,l])=>`<button class="amth" data-m="${m}" style="font-size:13px; ${sMethod===m?btnP:''}"><i class="ti ${ic}" style="font-size:15px; vertical-align:-3px; margin-right:5px;" aria-hidden="true"></i>${l}</button>`).join('')}
+      </div>
+      <div id="ambody"></div>
     </div>
     ${visible.length?`<div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><input type="checkbox" id="selall" style="width:18px; height:18px;" ${sSel.size&&visible.every(s=>sSel.has(s.user))?'checked':''}/><span style="font-size:12px; color:var(--color-text-tertiary);">Select all</span><span id="bulk" style="margin-left:auto; font-size:13px;"></span></div>`:`<div style="font-size:14px; color:var(--color-text-secondary); padding:16px 0;">No students here yet. Use &ldquo;Add students&rdquo; above.</div>`}
     <div id="sl"></div>`;
@@ -254,9 +257,37 @@
         </div>
       </div></div>`).join('');
     const sf=b.querySelector('#sf'); sf.onchange=()=>{sFilter=sf.value;sSel.clear();sOpen=null;studentsView();};
-    b.querySelector('#sadd').onclick=()=>{sAdd=!sAdd;studentsView();};
-    const cp=b.querySelector('#copy'); if(cp)cp.onclick=()=>{const inp=b.querySelector('#ilink');inp.select();try{navigator.clipboard.writeText(inp.value);}catch(e){}sendPrompt('Invite link copied');};
-    const sab=b.querySelector('#saddbtn'); if(sab)sab.onclick=()=>{const v=b.querySelector('#saddname').value.trim();if(v)sendPrompt('Invite sent to '+v+' (demo)');else sendPrompt('Enter an email or nickname first');};
+    b.querySelector('#sadd').onclick=()=>{sAdd=!sAdd;if(sAdd)createdResult=null;studentsView();};
+    const sc=b.querySelector('#saddclose'); if(sc)sc.onclick=()=>{sAdd=false;studentsView();};
+    const ctxClass=(sFilter!=='ALL'&&sFilter!=='NONE')?sFilter:null;
+    const ctxLabel=ctxClass||'your school';
+    const genUser=n=>n.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,18)||'student';
+    function renderAddBody(){
+      const ab=b.querySelector('#ambody'); if(!ab)return;
+      if(sMethod==='link'){
+        ab.innerHTML=`<div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:10px;">Share this link with your class. Anyone who opens it joins your school${ctxClass?(' and is added to '+ctxClass):''}. ${qm('Best for a whole class at once &mdash; students tap the link and sign in, no typing needed.')}</div><div style="display:flex; gap:8px; flex-wrap:wrap;"><input id="ilink" readonly value="${inviteLink}" style="flex:1; min-width:220px;"/><button id="copy"><i class="ti ti-copy" style="font-size:15px; vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Copy link</button></div>`;
+        ab.querySelector('#copy').onclick=()=>{const inp=ab.querySelector('#ilink');inp.select();try{navigator.clipboard.writeText(inp.value);}catch(e){}sendPrompt('Invite link copied');};
+      } else if(sMethod==='email'){
+        ab.innerHTML=`<div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:10px;">Add one student who already uses trainchinese, by their email or nickname. ${qm('Use this when the student already has a trainchinese account.')}</div><div style="display:flex; gap:8px; flex-wrap:wrap;"><input id="saddname" placeholder="email address or nickname" style="flex:1; min-width:200px;"/><button id="saddbtn" style="${btnP}">Add to ${ctxLabel}</button></div>`;
+        ab.querySelector('#saddbtn').onclick=()=>{const v=ab.querySelector('#saddname').value.trim();if(v)sendPrompt('Invite sent to '+v+' (demo)');else sendPrompt('Enter an email or nickname first');};
+      } else if(sMethod==='create'){
+        ab.innerHTML=`<div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:10px;">Type or paste one student per line. We create an account for each, with a username and a temporary password you can hand out. ${qm('Best when your students do not have trainchinese accounts yet. You get a list of logins to print.')}</div>
+        <textarea id="bulknames" placeholder="One student per line, for example:&#10;Tan Wei Ming&#10;Lee Hui En&#10;Goh Jia Hao" style="width:100%; height:auto; min-height:100px; padding:10px; font-family:inherit; font-size:14px;"></textarea>
+        <div style="display:flex; flex-direction:column; gap:8px; margin:10px 0;">${ctxClass?`<label style="display:flex; gap:8px; align-items:center; font-size:13px;"><input type="checkbox" id="bkcls" checked style="width:17px; height:17px;"/> Add them straight into ${ctxClass}</label>`:''}<label style="display:flex; gap:8px; align-items:center; font-size:13px;"><input type="checkbox" id="bksub" style="width:17px; height:17px;"/> Give each one a subscription ${qm('Uses one of your school subscriptions per student.')}</label></div>
+        <button id="bkcreate" style="${btnP}">Create accounts</button><div id="bkresult"></div>`;
+        const res=ab.querySelector('#bkresult');
+        if(createdResult&&createdResult.length){res.innerHTML=`<div style="background:var(--color-background-success); border-radius:var(--border-radius-md); padding:12px 14px; margin-top:14px;"><div style="font-size:14px; color:var(--color-text-success); font-weight:500; margin-bottom:8px;"><i class="ti ti-check" style="vertical-align:-2px; margin-right:4px;" aria-hidden="true"></i>${createdResult.length} account${createdResult.length===1?'':'s'} created &mdash; hand these out</div><div style="font-size:12px;">${createdResult.map(a=>`<div style="display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><span>${a.name}</span><span style="font-family:var(--font-mono); color:var(--color-text-secondary);">${a.user} / ${a.pass}</span></div>`).join('')}</div><button id="bkcopy" style="font-size:12px; margin-top:10px;"><i class="ti ti-copy" style="vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Copy all logins</button></div>`;res.querySelector('#bkcopy').onclick=()=>{try{navigator.clipboard.writeText(createdResult.map(a=>a.name+'\t'+a.user+'\t'+a.pass).join('\n'));}catch(e){}sendPrompt('Logins copied');};}
+        ab.querySelector('#bkcreate').onclick=()=>{const lines=(ab.querySelector('#bulknames').value||'').split('\n').map(x=>x.trim()).filter(Boolean);if(!lines.length){sendPrompt('Type at least one student name');return;}const bc=ab.querySelector('#bkcls');const toCls=(ctxClass&&bc&&bc.checked)?ctxClass:null;const giveSub=ab.querySelector('#bksub')&&ab.querySelector('#bksub').checked;createdResult=lines.map(n=>{const u=genUser(n);students.push({name:n,user:u,sub:!!giveSub,cls:toCls});return {name:n,user:u,pass:'tc'+(1000+Math.floor(Math.random()*9000))};});sendPrompt(createdResult.length+' accounts created (demo)');studentsView();};
+      } else if(sMethod==='existing'){
+        if(!ctxClass){ab.innerHTML=`<div style="font-size:13px; color:var(--color-text-secondary);">Pick a class in the &ldquo;Show&rdquo; menu above first, then come back here to add existing students to it.</div>`;return;}
+        const cand=students.filter(s=>s.cls!==ctxClass);
+        ab.innerHTML=`<div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:10px;">Add a student who is already in your school to ${ctxClass}. ${qm('Use this to put an existing student (from another class, or with no class) into this class.')}</div><input id="exq" placeholder="Search students" style="width:100%; margin-bottom:8px;"/><div id="exlist">${cand.length?cand.map(s=>`<label data-u="${s.user}" style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:0.5px solid var(--color-border-tertiary); cursor:pointer;"><input type="checkbox" class="excb" style="width:17px; height:17px;"/><span style="flex:1; font-size:14px;">${s.name}</span><span style="font-size:12px; color:var(--color-text-tertiary);">${s.cls||'no class'}</span></label>`).join(''):'<div style="font-size:13px; color:var(--color-text-tertiary); padding:8px 0;">Everyone is already in this class.</div>'}</div>${cand.length?`<button id="exadd" style="${btnP}; margin-top:10px;">Add selected to ${ctxClass}</button>`:''}`;
+        const exq=ab.querySelector('#exq'); if(exq)exq.oninput=e=>{const q=e.target.value.toLowerCase();ab.querySelectorAll('#exlist label').forEach(l=>{l.style.display=l.querySelector('span').textContent.toLowerCase().includes(q)?'':'none';});};
+        const exadd=ab.querySelector('#exadd'); if(exadd)exadd.onclick=()=>{const picked=[...ab.querySelectorAll('#exlist label')].filter(l=>l.querySelector('.excb').checked).map(l=>l.dataset.u);if(!picked.length){sendPrompt('Tick at least one student');return;}picked.forEach(u=>{const st=students.find(s=>s.user===u);if(st)st.cls=ctxClass;});sendPrompt(picked.length+' student'+(picked.length===1?'':'s')+' added to '+ctxClass+' (demo)');studentsView();};
+      }
+    }
+    b.querySelectorAll('.amth').forEach(btn=>btn.onclick=()=>{sMethod=btn.dataset.m;if(sMethod!=='create')createdResult=null;studentsView();});
+    renderAddBody();
     sl.querySelectorAll('.sex').forEach(x=>x.onclick=e=>{const u=e.currentTarget.closest('[data-u]').dataset.u;sOpen=sOpen===u?null:u;studentsView();});
     sl.querySelectorAll('.smove').forEach(sel=>sel.onchange=e=>{const u=e.currentTarget.closest('[data-u]').dataset.u;const st=students.find(s=>s.user===u);st.cls=e.target.value||null;sendPrompt(st.name+(st.cls?' moved to '+st.cls:' taken out of all classes')+' (demo)');studentsView();});
     sl.querySelectorAll('.ssub').forEach(btn=>btn.onclick=e=>{const u=e.currentTarget.closest('[data-u]').dataset.u;const st=students.find(s=>s.user===u);st.sub=!st.sub;sendPrompt((st.sub?'Gave a subscription to ':'Freed up subscription from ')+st.name+' (demo)');studentsView();});
