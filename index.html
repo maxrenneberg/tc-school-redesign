@@ -72,6 +72,7 @@
   let toastT; const sendPrompt=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2800);};
   const sections=[
     ['profile','ti-building','School'],
+    ['students','ti-users-group','Students'],
     ['lists','ti-books','Word lists'],
     ['seats','ti-license','Subscriptions'],
     ['teachers','ti-users','Teachers'],
@@ -194,6 +195,79 @@
     b.querySelector('#advtog').onclick=()=>{advOpen=!advOpen;lists();};
   }
   lists();
+
+  // ===== STUDENTS =====
+  const inviteLink='trainchinese.com/join/riverview-7Q2A';
+  let students=[
+    {name:'Aiden Tan',user:'aiden_tan',sub:true,cls:'P2-A'},{name:'Bella Ng',user:'bella_ng',sub:true,cls:'P2-A'},
+    {name:'Caleb Lim',user:'caleb_lim',sub:true,cls:'P2-A'},{name:'Daria Koh',user:'daria_koh',sub:false,cls:'P2-A'},
+    {name:'Ethan Goh',user:'ethan_goh',sub:true,cls:'P2-A'},{name:'Faith Wong',user:'faith_wong',sub:true,cls:'P2-A'},
+    {name:'Gavin Lee',user:'gavin_lee',sub:true,cls:'P2-A'},{name:'Hana Sim',user:'hana_sim',sub:true,cls:'P2-A'},
+    {name:'Ivan Ong',user:'ivan_ong',sub:true,cls:'P2-R'},{name:'Jia Yi Chua',user:'jiayi_chua',sub:true,cls:'P2-R'},
+    {name:'Kai Ho',user:'kai_ho',sub:false,cls:'P2-R'},{name:'Lena Teo',user:'lena_teo',sub:true,cls:'P1-A'},
+    {name:'Marcus Yeo',user:'marcus_yeo',sub:true,cls:'P1-A'},
+    {name:'Quentin Low',user:'quentin_low',sub:false,cls:null},{name:'Rina Goh',user:'rina_goh',sub:false,cls:null},{name:'Sam Tan',user:'sam_tan',sub:true,cls:null}
+  ];
+  let sFilter='P2-A', sAdd=false, sOpen=null; const sSel=new Set();
+  function studentsView(){
+    const b=body('students');
+    const visible=students.filter(s=> sFilter==='ALL'?true : sFilter==='NONE'? s.cls===null : s.cls===sFilter);
+    const noneCount=students.filter(s=>s.cls===null).length;
+    const ini=n=>n.split(' ').slice(0,2).map(w=>w[0].toUpperCase()).join('');
+    b.innerHTML=hd('Students','Add students to your classes, move them between classes, and see who has a subscription.')+
+    note('Students appear here once they accept your invite or sign in with your class link. Choose a class below to see who is in it.')+
+    `<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+      <span style="font-size:14px;">Show ${qm('Pick a class to see its students. &ldquo;Not in any class&rdquo; are students who joined your school but aren&rsquo;t in a class yet.')}</span>
+      <select id="sf">
+        <option value="ALL" ${sFilter==='ALL'?'selected':''}>All students</option>
+        ${classList.map(c=>`<option value="${c}" ${sFilter===c?'selected':''}>Class ${c}</option>`).join('')}
+        <option value="NONE" ${sFilter==='NONE'?'selected':''}>Not in any class (${noneCount})</option>
+      </select>
+      <span style="font-size:13px; color:var(--color-text-secondary);">${visible.length} student${visible.length===1?'':'s'}</span>
+      <button id="sadd" style="font-size:14px; ${btnP}; margin-left:auto;"><i class="ti ti-user-plus" style="font-size:16px; vertical-align:-3px; margin-right:6px;" aria-hidden="true"></i>Add students</button>
+    </div>
+    ${sFilter==='NONE'&&visible.length?`<div style="display:flex; gap:9px; background:var(--color-background-warning); border-radius:var(--border-radius-md); padding:11px 13px; margin-bottom:14px;"><i class="ti ti-alert-triangle" style="font-size:17px; color:var(--color-text-warning); flex-shrink:0;" aria-hidden="true"></i><span style="font-size:13px; color:var(--color-text-warning);">These students aren&rsquo;t studying anything yet. Open a student and choose a class to get them started.</span></div>`:''}
+    <div id="saddpanel" style="display:${sAdd?'block':'none'}; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:16px; margin-bottom:14px;">
+      <div style="font-size:14px; font-weight:500; margin-bottom:10px;">Add students ${qm('Two easy ways: share one link with your whole class, or add a student one at a time by email or nickname.')}</div>
+      <div style="font-size:13px; margin-bottom:5px;">1. Share this link with your class &mdash; anyone who opens it joins your school</div>
+      <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;"><input id="ilink" readonly value="${inviteLink}" style="flex:1; min-width:200px;"/><button id="copy" style="font-size:13px;"><i class="ti ti-copy" style="font-size:15px; vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Copy link</button></div>
+      <div style="font-size:13px; margin-bottom:5px;">2. Or add one student by email or nickname</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;"><input id="saddname" placeholder="email address or nickname" style="flex:1; min-width:200px;"/><button id="saddbtn" style="font-size:13px; ${btnP}">Add to ${sFilter==='ALL'||sFilter==='NONE'?'school':sFilter}</button></div>
+    </div>
+    ${visible.length?`<div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:0.5px solid var(--color-border-tertiary);"><input type="checkbox" id="selall" style="width:18px; height:18px;" ${sSel.size&&visible.every(s=>sSel.has(s.user))?'checked':''}/><span style="font-size:12px; color:var(--color-text-tertiary);">Select all</span><span id="bulk" style="margin-left:auto; font-size:13px;"></span></div>`:`<div style="font-size:14px; color:var(--color-text-secondary); padding:16px 0;">No students here yet. Use &ldquo;Add students&rdquo; above.</div>`}
+    <div id="sl"></div>`;
+    const sl=b.querySelector('#sl');
+    sl.innerHTML=visible.map(s=>`<div data-u="${s.user}" style="border-bottom:0.5px solid var(--color-border-tertiary);">
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 0;">
+        <input type="checkbox" class="scb" ${sSel.has(s.user)?'checked':''} style="width:18px; height:18px; flex-shrink:0;"/>
+        <div style="width:34px; height:34px; border-radius:50%; background:var(--color-background-info); color:var(--color-text-info); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; flex-shrink:0;">${ini(s.name)}</div>
+        <div style="flex:1; min-width:0;"><div style="font-size:14px;">${s.name}</div><div style="font-size:12px; color:var(--color-text-secondary);">${s.user}${s.cls?' &middot; '+s.cls:' &middot; no class'}</div></div>
+        ${s.sub?`<span style="font-size:12px; padding:3px 10px; border-radius:var(--border-radius-md); background:var(--color-background-success); color:var(--color-text-success);">Has subscription</span>`:`<span style="font-size:12px; padding:3px 10px; border-radius:var(--border-radius-md); background:var(--color-background-secondary); color:var(--color-text-secondary);">No subscription</span>`}
+        <button class="sex" aria-label="Options for this student" style="padding:6px 10px; font-size:13px;"><i class="ti ti-chevron-${sOpen===s.user?'up':'down'}" style="font-size:15px;" aria-hidden="true"></i></button>
+      </div>
+      <div style="display:${sOpen===s.user?'block':'none'}; padding:2px 0 16px 64px;">
+        <div style="margin-bottom:12px;"><label style="font-size:13px; color:var(--color-text-secondary);">Move to a class ${qm('Move this student into another class, or take them out of all classes.')}</label><br/><select class="smove" style="margin-top:5px;"><option value="" ${!s.cls?'selected':''}>No class</option>${classList.map(c=>`<option ${s.cls===c?'selected':''}>${c}</option>`).join('')}</select></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          ${s.sub?`<button class="ssub" style="font-size:13px;">Free up subscription</button>`:`<button class="ssub" style="font-size:13px; ${btnP}">Give a subscription</button>`}
+          <button class="smsg" style="font-size:13px;"><i class="ti ti-mail" style="font-size:15px; vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Message</button>
+          <button class="srm" style="font-size:13px; color:var(--color-text-danger); border-color:var(--color-border-danger);"><i class="ti ti-user-minus" style="font-size:15px; vertical-align:-3px; margin-right:4px;" aria-hidden="true"></i>Remove from school</button>
+        </div>
+      </div></div>`).join('');
+    const sf=b.querySelector('#sf'); sf.onchange=()=>{sFilter=sf.value;sSel.clear();sOpen=null;studentsView();};
+    b.querySelector('#sadd').onclick=()=>{sAdd=!sAdd;studentsView();};
+    const cp=b.querySelector('#copy'); if(cp)cp.onclick=()=>{const inp=b.querySelector('#ilink');inp.select();try{navigator.clipboard.writeText(inp.value);}catch(e){}sendPrompt('Invite link copied');};
+    const sab=b.querySelector('#saddbtn'); if(sab)sab.onclick=()=>{const v=b.querySelector('#saddname').value.trim();if(v)sendPrompt('Invite sent to '+v+' (demo)');else sendPrompt('Enter an email or nickname first');};
+    sl.querySelectorAll('.sex').forEach(x=>x.onclick=e=>{const u=e.currentTarget.closest('[data-u]').dataset.u;sOpen=sOpen===u?null:u;studentsView();});
+    sl.querySelectorAll('.smove').forEach(sel=>sel.onchange=e=>{const u=e.currentTarget.closest('[data-u]').dataset.u;const st=students.find(s=>s.user===u);st.cls=e.target.value||null;sendPrompt(st.name+(st.cls?' moved to '+st.cls:' taken out of all classes')+' (demo)');studentsView();});
+    sl.querySelectorAll('.ssub').forEach(btn=>btn.onclick=e=>{const u=e.currentTarget.closest('[data-u]').dataset.u;const st=students.find(s=>s.user===u);st.sub=!st.sub;sendPrompt((st.sub?'Gave a subscription to ':'Freed up subscription from ')+st.name+' (demo)');studentsView();});
+    sl.querySelectorAll('.smsg').forEach(btn=>btn.onclick=()=>sendPrompt('Message this student (demo)'));
+    sl.querySelectorAll('.srm').forEach(btn=>btn.onclick=e=>{const u=e.currentTarget.closest('[data-u]').dataset.u;const st=students.find(s=>s.user===u);students=students.filter(s=>s.user!==u);sSel.delete(u);sOpen=null;studentsView();sendPrompt('Removed '+st.name+' (demo)');});
+    function renderBulk(){const bk=b.querySelector('#bulk');if(!bk)return;if(sSel.size){bk.innerHTML=`<span style="color:var(--color-text-secondary); margin-right:8px;">${sSel.size} selected</span><button id="bmove" style="font-size:12px; padding:5px 10px;">Move to class&hellip;</button> <button id="brm" style="font-size:12px; padding:5px 10px; color:var(--color-text-danger); border-color:var(--color-border-danger);">Remove</button>`;bk.querySelector('#bmove').onclick=()=>sendPrompt('Move '+sSel.size+' students to another class (demo)');bk.querySelector('#brm').onclick=()=>{students=students.filter(s=>!sSel.has(s.user));sSel.clear();studentsView();sendPrompt('Removed selected students (demo)');};}else bk.innerHTML='';}
+    sl.querySelectorAll('.scb').forEach(cb=>cb.onchange=e=>{const u=e.currentTarget.closest('[data-u]').dataset.u;if(e.target.checked)sSel.add(u);else sSel.delete(u);renderBulk();});
+    const selall=b.querySelector('#selall'); if(selall)selall.onchange=()=>{if(selall.checked)visible.forEach(s=>sSel.add(s.user));else visible.forEach(s=>sSel.delete(s.user));studentsView();};
+    renderBulk();
+  }
+  studentsView();
 
   // ===== SUBSCRIPTIONS (SEATS) =====
   const active={total:300,used:275,avail:25,until:'30 April 2027'};
