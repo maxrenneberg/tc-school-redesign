@@ -14,6 +14,8 @@
   var DEMO='https://maxrenneberg.github.io/tc-school-redesign/';
   var ls={gid:null,ifr:null,rows:[],q:''};
   function teardownLs(){if(ls.ifr){try{ls.ifr.remove();}catch(e){}ls.ifr=null;}}
+  var st={gid:null,ifr:null,rows:[],q:''};
+  function teardownSt(){if(st.ifr){try{st.ifr.remove();}catch(e){}st.ifr=null;}}
 
   var css=''
   +'#tcr-root{--bg:#fff;--bg2:#f4f3ee;--bg3:#eceae3;--info:#e6f1fb;--ok:#e1f5ee;--warn:#faeeda;--tp:#1d1c1a;--ts:#5f5e5a;--tt:#8a8980;--tinfo:#185fa5;--tok:#0f6e56;--twarn:#854f0b;--td:#a32d2d;--bd:rgba(0,0,0,.12);--bd2:rgba(0,0,0,.25);}'
@@ -58,7 +60,7 @@
     +'<div id="tcr-wrap"><nav id="tcr-side">'+navH+'</nav><main id="tcr-main">'+secH+'</main></div>'
     +'</div></div><div id="tcr-toast"></div>';
   document.body.appendChild(root);
-  document.getElementById('tcr-x').onclick=function(){teardownLs();root.remove();};
+  document.getElementById('tcr-x').onclick=function(){teardownLs();teardownSt();root.remove();};
   document.getElementById('tcr-ov').onclick=function(e){if(e.target.id==='tcr-ov')root.remove();};
 
   var toastT; function toast(m){var t=document.getElementById('tcr-toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on');},2600);}
@@ -113,15 +115,65 @@
     [].forEach.call(b.querySelectorAll('.c-del'),function(btn){btn.onclick=function(){var gid=btn.dataset.gid,name=btn.dataset.name;if(!confirm('Delete class “'+name+'”? This cannot be undone.'))return;btn.disabled=true;btn.textContent='…';api('friendsGroupChange.php',{xreg:'5',friendGroupId:gid,returnFile:'friendsOrganize'}).then(function(){toast('Deleted “'+name+'”');loadClasses(renderAll);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Delete';});};});
   }
 
-  // ===== STUDENTS (preview, real class list) =====
+  // ===== STUDENTS (LIVE: read roster via iframe, add/remove via friendsGroupChange.php xreg 10=add / 11=remove) =====
   function renderStudents(){
     var b=body('students'); if(!b)return;
-    var opts=classNames().map(function(c){return '<option>'+c+'</option>';}).join('');
-    b.innerHTML=hd('Students','Add students to classes, move them, and manage subscriptions.',false)
-      +previewNote('Your class list below is live. Viewing and saving student rosters is the next wiring step, so the actions here are a preview.')
-      +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px"><span style="font-size:14px">Show class '+qm('Your real classes are loaded here. The roster view is being wired next.')+'</span><select id="s-cls">'+opts+'</select><button class="p" id="s-add" style="margin-left:auto">+ Add students</button></div>'
-      +'<div style="font-size:14px;color:var(--ts);padding:14px;background:var(--bg2);border-radius:8px">Open this class in trainchinese to see its students, or wait for the next update when the roster appears here. <span class="pill prev">Coming next</span></div>';
-    b.querySelector('#s-add').onclick=function(){prev('Add students');};
+    if(!classes.length){b.innerHTML=hd('Students','',true)+'<div style="color:var(--ts)">No classes yet. Create one in Classes first.</div>';return;}
+    if(!st.gid)st.gid=classes[0].gid;
+    var opts=classes.map(function(c){return '<option value="'+c.gid+'"'+(c.gid===st.gid?' selected':'')+'>'+c.name+'</option>';}).join('');
+    b.innerHTML=hd('Students','Tick a student to put them in a class, untick to take them out — saves to your account.',true)
+      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-flask" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5"><strong style="font-weight:500">Newly wired (beta).</strong> Toggling a student adds or removes them from this class for real. Inviting brand-new students is still <span class="pill prev">preview</span>.</span></div>'
+      +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span style="font-size:14px">Class '+qm('Students ticked here are in this class. Untick to remove them — they stay in your school.')+'</span><select id="st-cls">'+opts+'</select><span id="st-count" style="font-size:13px;color:var(--ts)"></span><button id="st-rl" style="font-size:12px;padding:6px 10px">Refresh</button><button class="p" id="st-add" style="margin-left:auto">+ Add students</button></div>'
+      +'<input id="st-q" placeholder="Search students" style="width:100%;margin-bottom:8px"/>'
+      +'<div id="st-area" style="color:var(--ts)">Reading this class’s students…</div>';
+    b.querySelector('#st-cls').onchange=function(e){st.gid=e.target.value;st.rows=[];loadClassStudents();};
+    b.querySelector('#st-rl').onclick=function(){st.rows=[];loadClassStudents();};
+    b.querySelector('#st-q').oninput=function(e){st.q=e.target.value.toLowerCase().trim();paintStudentRows();};
+    b.querySelector('#st-add').onclick=function(){prev('Inviting brand-new students');};
+    loadClassStudents();
+  }
+  function loadClassStudents(){
+    teardownSt();
+    var area=document.querySelector('#ts-students #st-area'); if(area)area.textContent='Reading this class’s students…';
+    var ifr=document.createElement('iframe'); st.ifr=ifr;
+    ifr.style.cssText='position:fixed;left:-9999px;top:0;width:1100px;height:1600px;border:0;';
+    ifr.src=base+'friendsGroupChange.php?xreg=3&returnFile=friendsOrganize&friendGroupId='+st.gid+'&rAp='+rAp;
+    document.body.appendChild(ifr);
+    var done=false;
+    function tryRead(att){
+      if(done||st.ifr!==ifr)return;
+      var doc; try{doc=ifr.contentDocument;}catch(e){doc=null;}
+      var cbs=doc?[].slice.call(doc.querySelectorAll('[onclick*="addRemoveToClass"]')):[];
+      if(cbs.length){done=true;st.rows=cbs.map(function(cb){
+        var nums=((cb.getAttribute('onclick')||'').match(/-?\d+/g)||[]).map(Number);
+        var input=cb.tagName==='INPUT'?cb:(cb.querySelector&&cb.querySelector('input[type=checkbox]'));
+        var inClass=input?!!input.checked:/checked/i.test(cb.outerHTML||'');
+        var h=cb.closest('li,tr,div')||cb.parentElement; var raw=(h?h.textContent:'').replace(/\s+/g,' ').trim();
+        var nm=raw.match(/([A-Za-z][A-Za-z .'’-]+?)\s*\(([^)]+)\)/);
+        return {studentId:nums[0],groupId:nums[1],inClass:inClass,name:nm?nm[1].trim():(raw.slice(0,28)||('Student '+nums[0])),user:nm?nm[2].trim():''};
+      }).filter(function(r){return r.studentId;});paintStudentRows();return;}
+      if(att<22){setTimeout(function(){tryRead(att+1);},400);}else if(area){area.innerHTML='<div style="color:'+RED+'">Couldn’t read students (page was slow). Press Refresh, or Open the class in trainchinese.</div>';}
+    }
+    ifr.onload=function(){setTimeout(function(){tryRead(0);},800);};
+    setTimeout(function(){tryRead(0);},6500);
+  }
+  function paintStudentRows(){
+    var area=document.querySelector('#ts-students #st-area'); if(!area)return;
+    var cnt=document.querySelector('#ts-students #st-count'); if(cnt)cnt.textContent=st.rows.filter(function(r){return r.inClass;}).length+' in this class';
+    var rows=st.rows.filter(function(r){return !st.q||(r.name+' '+r.user).toLowerCase().indexOf(st.q)>=0;});
+    area.innerHTML=rows.length?rows.map(function(r){var idx=st.rows.indexOf(r);return '<label class="tcr-row" style="cursor:pointer"><input type="checkbox" data-i="'+idx+'"'+(r.inClass?' checked':'')+'/><span style="flex:1;font-size:14px">'+r.name+(r.user?' <span style="color:var(--ts);font-size:12px">'+r.user+'</span>':'')+'</span><span style="font-size:12px;min-width:84px;text-align:right;color:'+(r.inClass?'var(--tok)':'var(--tt)')+'">'+(r.inClass?'In class':'Not in class')+'</span></label>';}).join(''):'<div style="color:var(--ts);padding:8px 0">No students match.</div>';
+    [].forEach.call(area.querySelectorAll('input[type=checkbox]'),function(cb){cb.onchange=function(){saveStudent(parseInt(cb.getAttribute('data-i'),10),cb);};});
+  }
+  function saveStudent(idx,cb){
+    var r=st.rows[idx]; if(!r)return; cb.disabled=true;
+    var willBeIn=cb.checked; var xreg=willBeIn?'10':'11';
+    var q=new URLSearchParams({rAp:rAp,xreg:xreg,studentId:String(r.studentId),friendGroupId:String(st.gid),isAjax:'1'});
+    fetch(base+'friendsGroupChange.php?'+q.toString(),{credentials:'include'}).then(function(res){
+      if(!res.ok)throw new Error('status '+res.status);
+      r.inClass=willBeIn; toast(r.name+(willBeIn?' added to ':' removed from ')+className(st.gid));
+      var cnt=document.querySelector('#ts-students #st-count'); if(cnt)cnt.textContent=st.rows.filter(function(x){return x.inClass;}).length+' in this class';
+      var lbl=cb.parentElement.querySelector('span:last-child'); if(lbl){lbl.textContent=r.inClass?'In class':'Not in class';lbl.style.color=r.inClass?'var(--tok)':'var(--tt)';}
+    }).catch(function(e){toast('Failed: '+e.message);cb.checked=!cb.checked;cb.disabled=false;});
   }
 
   // ===== WORD LISTS (LIVE: read via iframe, save via shareWithFriends.php) =====
