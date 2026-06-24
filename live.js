@@ -12,6 +12,8 @@
   var rAp=findToken();
   var base='/v2/';
   var DEMO='https://maxrenneberg.github.io/tc-school-redesign/';
+  var ls={gid:null,ifr:null,rows:[],q:''};
+  function teardownLs(){if(ls.ifr){try{ls.ifr.remove();}catch(e){}ls.ifr=null;}}
 
   var css=''
   +'#tcr-root{--bg:#fff;--bg2:#f4f3ee;--bg3:#eceae3;--info:#e6f1fb;--ok:#e1f5ee;--warn:#faeeda;--tp:#1d1c1a;--ts:#5f5e5a;--tt:#8a8980;--tinfo:#185fa5;--tok:#0f6e56;--twarn:#854f0b;--td:#a32d2d;--bd:rgba(0,0,0,.12);--bd2:rgba(0,0,0,.25);}'
@@ -56,7 +58,7 @@
     +'<div id="tcr-wrap"><nav id="tcr-side">'+navH+'</nav><main id="tcr-main">'+secH+'</main></div>'
     +'</div></div><div id="tcr-toast"></div>';
   document.body.appendChild(root);
-  document.getElementById('tcr-x').onclick=function(){root.remove();};
+  document.getElementById('tcr-x').onclick=function(){teardownLs();root.remove();};
   document.getElementById('tcr-ov').onclick=function(e){if(e.target.id==='tcr-ov')root.remove();};
 
   var toastT; function toast(m){var t=document.getElementById('tcr-toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on');},2600);}
@@ -122,19 +124,58 @@
     b.querySelector('#s-add').onclick=function(){prev('Add students');};
   }
 
-  // ===== WORD LISTS (preview, real class list) =====
+  // ===== WORD LISTS (LIVE: read via iframe, save via shareWithFriends.php) =====
+  function className(gid){var c=classes.filter(function(x){return x.gid===gid;})[0];return c?c.name:'class';}
   function renderLists(){
     var b=body('lists'); if(!b)return;
-    var opts=classNames().map(function(c){return '<option>'+c+'</option>';}).join('');
-    var sample=['2B Unit 19','2B Unit 18','2A Unit 10','1B11','1A19','1A01'];
-    b.innerHTML=hd('Word lists','Choose which word lists each class studies, and how Chinese is shown.',false)
-      +previewNote('The class picker is live. Reading and saving a class’s lists and display settings is being wired next.')
-      +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px"><span style="font-size:14px">Set up class '+qm('Each class has its own lists and settings.')+'</span><select>'+opts+'</select></div>'
-      +'<div style="font-size:14px;font-weight:500;margin-bottom:8px">Lists '+qm('Tick to add a list to this class.')+'</div>'
-      +sample.map(function(n){return '<label class="tcr-row" style="cursor:pointer"><input type="checkbox"/><span style="flex:1;font-size:14px">'+n+'</span><span class="pill prev">preview</span></label>';}).join('')
-      +'<div style="margin-top:10px"><button id="l-more">View full lists design</button></div>';
-    b.querySelector('#l-more').onclick=function(){window.open(DEMO,'_blank');};
-    [].forEach.call(b.querySelectorAll('input[type=checkbox]'),function(c){c.onchange=function(){prev('Sharing a list');c.checked=!c.checked;};});
+    if(!classes.length){b.innerHTML=hd('Word lists','',true)+'<div style="color:var(--ts)">No classes yet.</div>';return;}
+    if(!ls.gid)ls.gid=classes[0].gid;
+    var opts=classes.map(function(c){return '<option value="'+c.gid+'"'+(c.gid===ls.gid?' selected':'')+'>'+c.name+'</option>';}).join('');
+    b.innerHTML=hd('Word lists','Tick a list to add it to a class. This saves to your account.',true)
+      +'<div style="font-size:13px;color:var(--ts);margin-bottom:12px">Reading and saving which lists each class studies is live. The Chinese-display settings are still <span class="pill prev">preview</span>.</div>'
+      +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span style="font-size:14px">Set up class '+qm('Each class has its own word lists. Pick a class, then tick the lists it studies.')+'</span><select id="l-cls">'+opts+'</select><span id="l-count" style="font-size:13px;color:var(--ts)"></span><button id="l-rl" style="font-size:12px;padding:6px 10px">Refresh</button></div>'
+      +'<input id="l-q" placeholder="Search lists" style="width:100%;margin-bottom:8px"/>'
+      +'<div id="l-area" style="color:var(--ts)">Reading this class’s lists…</div>';
+    b.querySelector('#l-cls').onchange=function(e){ls.gid=e.target.value;ls.rows=[];loadClassLists();};
+    b.querySelector('#l-rl').onclick=function(){ls.rows=[];loadClassLists();};
+    b.querySelector('#l-q').oninput=function(e){ls.q=e.target.value.toLowerCase().trim();paintRows();};
+    loadClassLists();
+  }
+  function loadClassLists(){
+    teardownLs();
+    var area=document.querySelector('#ts-lists #l-area'); if(area)area.textContent='Reading this class’s lists…';
+    var ifr=document.createElement('iframe'); ls.ifr=ifr;
+    ifr.style.cssText='position:fixed;left:-9999px;top:0;width:1100px;height:1400px;border:0;';
+    ifr.src=base+'friendsGroupChange.php?xreg=3&returnFile=friendsOrganize&friendGroupId='+ls.gid+'&rAp='+rAp;
+    document.body.appendChild(ifr);
+    var done=false;
+    function tryRead(att){
+      if(done||ls.ifr!==ifr)return;
+      var doc; try{doc=ifr.contentDocument;}catch(e){doc=null;}
+      var btns=doc?[].slice.call(doc.querySelectorAll('a,button')).filter(function(e){return /Stop sharing|Start sharing/i.test(e.textContent);}):[];
+      if(btns.length){done=true;ls.rows=btns.map(function(btn){var h=btn.closest('li,tr,div')||btn.parentElement;var name=(h?h.textContent:'').replace(/\s+/g,' ').split(/Stop sharing|Start sharing|Show list|Assign list/)[0].replace(/[^\w .-]/g,'').trim();var nums=((btn.getAttribute('onclick')||'').match(/-?\d+/g)||[]).map(Number);return {name:name,shared:/Stop sharing/i.test(btn.textContent),listId:nums[0],xreg:nums[1],friendId:nums[2],groupId:nums[3]};}).filter(function(r){return r.name&&r.listId;});paintRows();return;}
+      if(att<22){setTimeout(function(){tryRead(att+1);},400);}else if(area){area.innerHTML='<div style="color:'+RED+'">Couldn’t read this class’s lists (page was slow). Press Refresh.</div>';}
+    }
+    ifr.onload=function(){setTimeout(function(){tryRead(0);},800);};
+    setTimeout(function(){tryRead(0);},6500);
+  }
+  function paintRows(){
+    var area=document.querySelector('#ts-lists #l-area'); if(!area)return;
+    var cnt=document.querySelector('#ts-lists #l-count'); if(cnt)cnt.textContent=ls.rows.filter(function(r){return r.shared;}).length+' of '+ls.rows.length+' added';
+    var rows=ls.rows.filter(function(r){return !ls.q||r.name.toLowerCase().indexOf(ls.q)>=0;});
+    area.innerHTML=rows.length?rows.map(function(r){var idx=ls.rows.indexOf(r);return '<label class="tcr-row" style="cursor:pointer"><input type="checkbox" data-i="'+idx+'"'+(r.shared?' checked':'')+'/><span style="flex:1;font-size:14px">'+r.name+'</span><span style="font-size:12px;min-width:84px;text-align:right;color:'+(r.shared?'var(--tok)':'var(--tt)')+'">'+(r.shared?'In this class':'Not added')+'</span></label>';}).join(''):'<div style="color:var(--ts);padding:8px 0">No lists match.</div>';
+    [].forEach.call(area.querySelectorAll('input[type=checkbox]'),function(cb){cb.onchange=function(){saveShare(parseInt(cb.getAttribute('data-i'),10),cb);};});
+  }
+  function saveShare(idx,cb){
+    var r=ls.rows[idx]; if(!r)return; cb.disabled=true;
+    var q=new URLSearchParams({rAp:rAp,xreg:String(r.xreg),listNo:String(r.listId),friendId:String(r.friendId),groupClassId:String(r.groupId),reloadPage:'1'});
+    fetch(base+'shareWithFriends.php?'+q.toString(),{credentials:'include'}).then(function(res){
+      if(!res.ok)throw new Error('status '+res.status);
+      r.shared=!r.shared; toast((r.shared?'Added to ':'Removed from ')+className(ls.gid));
+      var cnt=document.querySelector('#ts-lists #l-count'); if(cnt)cnt.textContent=ls.rows.filter(function(x){return x.shared;}).length+' of '+ls.rows.length+' added';
+      var lbl=cb.parentElement.querySelector('span:last-child'); if(lbl){lbl.textContent=r.shared?'In this class':'Not added';lbl.style.color=r.shared?'var(--tok)':'var(--tt)';}
+      setTimeout(function(){if(ls.ifr)loadClassLists();},500);
+    }).catch(function(e){toast('Failed: '+e.message);cb.checked=!cb.checked;cb.disabled=false;});
   }
 
   // ===== SUBSCRIPTIONS (preview) =====
