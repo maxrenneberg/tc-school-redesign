@@ -298,15 +298,57 @@
       acctCache={profile:profile,seats:seats}; cb(acctCache);
     }).catch(function(){cb({profile:{},seats:[]});});
   }
+  var schForm=null;
   function renderSchool(){
     var b=body('school'); if(!b)return;
-    b.innerHTML=hd('Your school','Basic details about your school — read live from your account.',true)+'<div id="sch-body" style="color:var(--ts)">Reading your school details…</div>';
-    loadAccountConfig(function(a){
-      var p=a.profile||{}; var el=document.querySelector('#ts-school #sch-body'); if(!el)return;
-      var rows=[['School name',p.name],['School type',p.type],['Number of students',p.students],['Character style',p.chars?(p.chars.charAt(0).toUpperCase()+p.chars.slice(1)+' Chinese'):''],['Textbooks',p.textbooks]];
-      var any=rows.some(function(r){return r[1];});
-      el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">'+rows.map(function(r){return '<div><div style="font-size:13px;color:var(--ts)">'+r[0]+'</div><div style="font-size:15px;margin-top:2px">'+(r[1]||'<span style="color:var(--tt)">not set</span>')+'</div></div>';}).join('')+'</div>'+(any?'':'<div style="font-size:13px;color:var(--tt);margin-top:10px">No school profile filled in on this account.</div>')+'<div style="margin-top:14px"><button onclick="window.open(\''+base+'viewAccountConfig.php\')"><i class="ti ti-edit" style="font-size:15px;vertical-align:-3px;margin-right:5px"></i>Edit on trainchinese ↗</button></div>';
-    });
+    b.innerHTML=hd('Your school','Edit your school details and weekly report day — saves live.',true)+'<div id="sch-body" style="color:var(--ts)">Reading your school details…</div>';
+    loadAccountConfig(function(a){showSchoolRead(a.profile||{});});
+  }
+  function showSchoolRead(p){
+    var el=document.querySelector('#ts-school #sch-body'); if(!el)return;
+    var rows=[['School name',p.name],['School type',p.type],['Number of students',p.students],['Character style',p.chars?(p.chars.charAt(0).toUpperCase()+p.chars.slice(1)+' Chinese'):''],['Textbooks',p.textbooks]];
+    var any=rows.some(function(r){return r[1];});
+    el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">'+rows.map(function(r){return '<div><div style="font-size:13px;color:var(--ts)">'+r[0]+'</div><div style="font-size:15px;margin-top:2px">'+(r[1]||'<span style="color:var(--tt)">not set</span>')+'</div></div>';}).join('')+'</div>'+(any?'':'<div style="font-size:13px;color:var(--tt);margin-top:10px">No school profile filled in yet.</div>')+'<button class="p" id="sch-edit" style="margin-top:16px"><i class="ti ti-edit" style="font-size:15px;vertical-align:-3px;margin-right:5px"></i>Edit details</button>';
+    el.querySelector('#sch-edit').onclick=editSchool;
+  }
+  function editSchool(){
+    var el=document.querySelector('#ts-school #sch-body'); if(el)el.innerHTML='Opening editor…';
+    fetch(base+'viewMultiSuscription.php?confirmToBecomeTeacher=1',{credentials:'include'}).then(function(r){return r.text();}).then(function(html){
+      var d=new DOMParser().parseFromString(html,'text/html');
+      schForm=[].slice.call(d.querySelectorAll('form')).filter(function(x){return x.querySelector('[name=family_name]');})[0];
+      if(!schForm){if(el)el.innerHTML='<div style="color:'+RED+'">Could not open the editor.</div>';return;}
+      var g=function(n){var e=schForm.querySelector('[name="'+n+'"]');return e?(e.value||''):'';};
+      var tc=(schForm.querySelector('input[name=teachingChar]:checked')||{}).value||'simpl';
+      var nw=(schForm.querySelector('input[name=notificationWeekdays]:checked')||{}).value||'0';
+      var days=[['0','No weekly report'],['1','Monday'],['2','Tuesday'],['4','Wednesday'],['8','Thursday'],['16','Friday'],['32','Saturday'],['64','Sunday']];
+      function esc(s){return String(s).replace(/"/g,'&quot;');}
+      el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">'
+        +'<div><label style="font-size:13px;color:var(--ts)">School name</label><input id="e-name" value="'+esc(g('family_name'))+'" style="width:100%;margin-top:4px"/></div>'
+        +'<div><label style="font-size:13px;color:var(--ts)">School type</label><input id="e-type" value="'+esc(g('typeOfSchool'))+'" style="width:100%;margin-top:4px"/></div>'
+        +'<div><label style="font-size:13px;color:var(--ts)">Number of students</label><input id="e-num" type="number" value="'+esc(g('numberOfStudents'))+'" style="width:100%;margin-top:4px"/></div>'
+        +'<div><label style="font-size:13px;color:var(--ts)">Characters '+qm('Which Chinese characters your school teaches.')+'</label><select id="e-char" style="width:100%;margin-top:4px"><option value="simpl"'+(tc==='simpl'?' selected':'')+'>Simplified</option><option value="trad"'+(tc==='trad'?' selected':'')+'>Traditional</option><option value="both"'+(tc==='both'?' selected':'')+'>Both</option></select></div>'
+        +'<div><label style="font-size:13px;color:var(--ts)">Textbooks</label><input id="e-book" value="'+esc(g('textbookUsed'))+'" style="width:100%;margin-top:4px"/></div>'
+        +'<div><label style="font-size:13px;color:var(--ts)">Weekly progress email '+qm('Get a weekly report of your students’ training on this day.')+'</label><select id="e-notif" style="width:100%;margin-top:4px">'+days.map(function(dd){return '<option value="'+dd[0]+'"'+(nw===dd[0]?' selected':'')+'>'+dd[1]+'</option>';}).join('')+'</select></div>'
+        +'</div><div style="margin-top:16px;display:flex;gap:8px"><button class="p" id="e-save">Save changes</button><button id="e-cancel">Cancel</button></div>';
+      el.querySelector('#e-cancel').onclick=function(){acctCache=null;renderSchool();};
+      el.querySelector('#e-save').onclick=saveSchool;
+    }).catch(function(e){if(el)el.innerHTML='<div style="color:'+RED+'">Editor failed to load: '+e.message+'</div>';});
+  }
+  function saveSchool(){
+    if(!schForm)return; var el=document.querySelector('#ts-school #sch-body');
+    var btn=el.querySelector('#e-save'); if(btn){btn.disabled=true;btn.textContent='Saving…';}
+    var set=function(n,v){var e=schForm.querySelector('[name="'+n+'"]');if(e)e.value=v;};
+    set('family_name',el.querySelector('#e-name').value); set('typeOfSchool',el.querySelector('#e-type').value);
+    set('numberOfStudents',el.querySelector('#e-num').value); set('textbookUsed',el.querySelector('#e-book').value);
+    var tc=el.querySelector('#e-char').value; [].forEach.call(schForm.querySelectorAll('input[name=teachingChar]'),function(r){r.checked=(r.value===tc);});
+    var nw=el.querySelector('#e-notif').value; [].forEach.call(schForm.querySelectorAll('input[name=notificationWeekdays]'),function(r){r.checked=(r.value===nw);});
+    var fd=new URLSearchParams();
+    [].forEach.call(schForm.querySelectorAll('input,select,textarea'),function(e){if(!e.name)return;if((e.type==='checkbox'||e.type==='radio')&&!e.checked)return;fd.append(e.name,e.value==null?'':e.value);});
+    fd.set('rAp',rAp);
+    fetch(base+'viewMultiSuscription.php',{method:'POST',credentials:'include',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd}).then(function(res){
+      if(!res.ok)throw new Error('status '+res.status);
+      toast('School details saved'); acctCache=null; renderSchool();
+    }).catch(function(e){toast('Failed: '+e.message);if(btn){btn.disabled=false;btn.textContent='Save changes';}});
   }
   function renderSeats(){
     var b=body('seats'); if(!b)return;
