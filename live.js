@@ -106,6 +106,7 @@
     classes.forEach(function(c){
       h+='<div class="tcr-row"><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:500">'+c.name+'</div><div style="font-size:12px;color:var(--ts)">'+c.count+' student'+(c.count===1?'':'s')+(c.assigned?(' · teacher: '+c.assigned):'')+'</div></div>'
         +'<a href="'+base+'friendsGroupChange.php?xreg=3&returnFile=friendsOrganize&friendGroupId='+c.gid+'&rAp='+rAp+'" target="_blank" style="font-size:13px;color:var(--tinfo);text-decoration:none">Open</a>'
+        +'<button class="c-ren" data-gid="'+c.gid+'" data-name="'+c.name.replace(/"/g,'')+'">Rename</button>'
         +'<button class="d c-del" data-gid="'+c.gid+'" data-name="'+c.name.replace(/"/g,'')+'">Delete</button></div>';
     });
     b.innerHTML=h;
@@ -113,6 +114,7 @@
     b.querySelector('#c-add').onclick=function(){var f=b.querySelector('#c-addform');f.style.display=f.style.display==='none'?'block':'none';var n=b.querySelector('#c-name');if(n)n.focus();};
     b.querySelector('#c-create').onclick=function(){var nm=(b.querySelector('#c-name').value||'').trim();if(!nm){toast('Type a class name first');return;}var btn=b.querySelector('#c-create');btn.disabled=true;btn.textContent='Saving…';api('friendsOrganize.php',{xreg:'101',newClass:nm}).then(function(){toast('Class “'+nm+'” saved');loadClasses(renderAll);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Create class';});};
     [].forEach.call(b.querySelectorAll('.c-del'),function(btn){btn.onclick=function(){var gid=btn.dataset.gid,name=btn.dataset.name;if(!confirm('Delete class “'+name+'”? This cannot be undone.'))return;btn.disabled=true;btn.textContent='…';api('friendsGroupChange.php',{xreg:'5',friendGroupId:gid,returnFile:'friendsOrganize'}).then(function(){toast('Deleted “'+name+'”');loadClasses(renderAll);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Delete';});};});
+    [].forEach.call(b.querySelectorAll('.c-ren'),function(btn){btn.onclick=function(){var gid=btn.dataset.gid,name=btn.dataset.name;var nn=prompt('New name for “'+name+'”:',name);if(nn===null)return;nn=nn.trim();if(!nn||nn===name)return;btn.disabled=true;var bd=new URLSearchParams({rAp:rAp,xreg:'2',friendGroupId:gid,addName:nn,returnFile:'friendsOrganize'});fetch(base+'friendsGroupChange.php',{method:'POST',credentials:'include',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:bd}).then(function(res){if(!res.ok)throw new Error('status '+res.status);toast('Renamed to “'+nn+'”');loadClasses(renderAll);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;});};});
   }
 
   // ===== STUDENTS (LIVE: read roster via iframe, add/remove via friendsGroupChange.php xreg 10=add / 11=remove) =====
