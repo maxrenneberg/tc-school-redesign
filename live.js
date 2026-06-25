@@ -380,15 +380,18 @@
       +'<div style="margin-top:12px"><button onclick="window.open(\''+DEMO+'\')">Open full design ↗</button></div>';
   }
 
-  // ===== TEACHERS (LIVE add via teacherAddBySchool.php; remove/permissions preview) =====
+  // ===== TEACHERS (LIVE: invite via POST; remove + permission toggles drive the real controls via iframe) =====
+  var tc={ifr:null,rows:[],toggles:[]};
+  function teardownTc(){if(tc.ifr){try{tc.ifr.remove();}catch(e){}tc.ifr=null;}}
   function renderTeachers(){
     var b=body('teachers'); if(!b)return;
-    b.innerHTML=hd('Teachers','Invite teachers to help run your school.',true)
-      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-flask" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5"><strong style="font-weight:500">Inviting a teacher saves live.</strong> Removing teachers and the school permission toggles appear on multi-teacher accounts and are still <span class="pill prev">preview</span>.</span></div>'
+    b.innerHTML=hd('Teachers','Invite teachers, set school permissions, and remove teachers — saves live.',true)
+      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-info-circle" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5">Inviting saves live. The permission toggles and Remove buttons appear and work automatically once your school has other teachers.</span></div>'
       +'<div style="background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:14px;font-weight:500;margin-bottom:4px">Invite a teacher</div>'
       +'<div style="font-size:12px;color:var(--tt);margin-bottom:10px">We email them a login link. If they are new to trainchinese, we create their account.</div>'
       +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px"><div><label style="font-size:13px;color:var(--ts)">Their email '+qm('We email a login link to this address.')+'</label><input id="tc-email" type="email" placeholder="teacher@school.edu" style="width:100%;margin-top:4px"/></div><div><label style="font-size:13px;color:var(--ts)">Username '+qm('A short name they log in with, e.g. ms_lim.')+'</label><input id="tc-user" placeholder="ms_lim" style="width:100%;margin-top:4px"/></div></div>'
       +'<button class="p" id="tc-send" style="margin-top:12px">Send invite</button></div>'
+      +'<div id="tc-toggles"></div>'
       +'<div id="tc-list" style="color:var(--ts)">Reading your teachers…</div>';
     b.querySelector('#tc-send').onclick=function(){
       var em=(b.querySelector('#tc-email').value||'').trim(), un=(b.querySelector('#tc-user').value||'').trim();
@@ -398,23 +401,45 @@
       fetch(base+'teacherAddBySchool.php',{method:'POST',credentials:'include',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:bd}).then(function(res){
         if(!res.ok)throw new Error('status '+res.status);
         toast('Invite sent to '+un); b.querySelector('#tc-email').value='';b.querySelector('#tc-user').value='';btn.disabled=false;btn.textContent='Send invite';
-        setTimeout(loadTeachers,600);
+        setTimeout(loadTeachers,800);
       }).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Send invite';});
     };
     loadTeachers();
   }
   function loadTeachers(){
-    fetch(base+'teacherAddBySchool.php',{credentials:'include'}).then(function(r){return r.text();}).then(function(html){
-      var d=new DOMParser().parseFromString(html,'text/html'); var rows=[];
-      [].slice.call(d.querySelectorAll('tr,li,div')).forEach(function(e){
-        if(e.children.length>8)return; var txt=(e.textContent||'').replace(/\s+/g,' ').trim();
-        if(!/Remove|Send email/i.test(txt))return; var m=txt.match(/([^@\s][^@]*?)\s+([\w.+-]+@[\w.-]+\.\w+)/);
-        if(m && rows.length<80 && !rows.find(function(x){return x.email===m[2];}))rows.push({name:m[1].trim().slice(0,40),email:m[2]});
-      });
-      var el=document.querySelector('#ts-teachers #tc-list'); if(!el)return;
-      if(!rows.length){el.innerHTML='<div style="color:var(--ts);font-size:14px">No other teachers yet — invite one above.</div>';return;}
-      el.innerHTML='<div style="font-size:13px;color:var(--ts);margin-bottom:6px">'+rows.length+' teacher'+(rows.length===1?'':'s')+' in your school</div>'+rows.map(function(t){var ini=(t.name.replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0].toUpperCase();}).join(''))||'T';return '<div class="tcr-row"><div style="width:32px;height:32px;border-radius:50%;background:var(--info);color:var(--tinfo);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500">'+ini+'</div><div style="flex:1;min-width:0"><div style="font-size:14px">'+t.name+'</div><div style="font-size:12px;color:var(--ts)">'+t.email+'</div></div><button class="d" disabled title="Available on multi-teacher school accounts" style="opacity:.5">Remove</button></div>';}).join('');
-    }).catch(function(e){var el=document.querySelector('#ts-teachers #tc-list');if(el)el.innerHTML='<div style="color:'+RED+'">Could not read teachers: '+e.message+'</div>';});
+    teardownTc();
+    var ifr=document.createElement('iframe'); tc.ifr=ifr;
+    ifr.style.cssText='position:fixed;left:-9999px;top:0;width:1100px;height:1700px;border:0;';
+    ifr.src=base+'teacherAddBySchool.php?rAp='+rAp; document.body.appendChild(ifr);
+    var done=false;
+    function tryRead(att){
+      if(done||tc.ifr!==ifr)return; var doc; try{doc=ifr.contentDocument;}catch(e){doc=null;}
+      if(doc&&doc.body&&/belong to your school|Add teacher|Email address of the teacher/i.test(doc.body.textContent)){
+        done=true; var rows=[];
+        [].slice.call(doc.querySelectorAll('tr,li,div')).forEach(function(e){
+          if(e.children.length>12)return; var rm=[].slice.call(e.querySelectorAll('a,button,input')).filter(function(x){return /^\s*(🗑️?\s*)?Remove\s*$/i.test((x.textContent||x.value||'').replace(/\s+/g,' ').trim());})[0];
+          var m=(e.textContent||'').replace(/\s+/g,' ').match(/([^@\s][^@]*?)\s+([\w.+-]+@[\w.-]+\.\w+)/);
+          if(rm&&m&&!rows.find(function(r){return r.email===m[2];}))rows.push({name:m[1].trim().slice(0,40),email:m[2],rm:rm});
+        });
+        tc.rows=rows; var tg=[];
+        [].slice.call(doc.querySelectorAll('input[type=checkbox]')).forEach(function(cb){var h=cb.closest('div,td,label,li,p,section')||cb.parentElement;var near=(h?h.textContent:'').replace(/\s+/g,' ').trim();if(/upgrade students|coupons bought|change class members|add or remove students|invite students to your school/i.test(near))tg.push({label:near.slice(0,80),el:cb});});
+        tc.toggles=tg; paintTeachers(); return;
+      }
+      if(att<20)setTimeout(function(){tryRead(att+1);},400); else paintTeachers();
+    }
+    ifr.onload=function(){setTimeout(function(){tryRead(0);},700);};
+    setTimeout(function(){tryRead(0);},6500);
+  }
+  function paintTeachers(){
+    var tgEl=document.querySelector('#ts-teachers #tc-toggles');
+    if(tgEl){
+      tgEl.innerHTML=tc.toggles.length?('<div style="font-size:14px;font-weight:500;margin:6px 0 6px">School permissions <span class="pill live">live</span></div>'+tc.toggles.map(function(t,i){return '<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--bd)"><span style="font-size:14px">'+t.label+'</span><input type="checkbox" data-ti="'+i+'"'+(t.el.checked?' checked':'')+'/></div>';}).join('')):'';
+      [].forEach.call(tgEl.querySelectorAll('input[type=checkbox]'),function(cb){cb.onchange=function(){var t=tc.toggles[+cb.getAttribute('data-ti')];if(!t)return;try{if(t.el.checked!==cb.checked){t.el.checked=cb.checked;t.el.dispatchEvent(new Event('change',{bubbles:true}));t.el.dispatchEvent(new Event('click',{bubbles:true}));}toast('Permission saved');}catch(e){toast('Failed: '+e.message);cb.checked=!cb.checked;}};});
+    }
+    var el=document.querySelector('#ts-teachers #tc-list'); if(!el)return;
+    if(!tc.rows.length){el.innerHTML='<div style="color:var(--ts);font-size:14px">No other teachers yet — invite one above.</div>';return;}
+    el.innerHTML='<div style="font-size:13px;color:var(--ts);margin:8px 0 6px">'+tc.rows.length+' teacher'+(tc.rows.length===1?'':'s')+' in your school</div>'+tc.rows.map(function(t,i){var ini=(t.name.replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0].toUpperCase();}).join(''))||'T';return '<div class="tcr-row"><div style="width:32px;height:32px;border-radius:50%;background:var(--info);color:var(--tinfo);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500">'+ini+'</div><div style="flex:1;min-width:0"><div style="font-size:14px">'+t.name+'</div><div style="font-size:12px;color:var(--ts)">'+t.email+'</div></div><button class="d tc-rm" data-i="'+i+'">Remove</button></div>';}).join('');
+    [].forEach.call(el.querySelectorAll('.tc-rm'),function(btn){btn.onclick=function(){var t=tc.rows[+btn.getAttribute('data-i')];if(!t)return;if(!confirm('Remove teacher '+t.name+' ('+t.email+') from your school?'))return;btn.disabled=true;btn.textContent='…';try{t.rm.click();toast('Removing '+t.name+'…');setTimeout(loadTeachers,1400);}catch(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Remove';}};});
   }
 
   function renderAll(){
