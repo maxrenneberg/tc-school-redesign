@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Run the live school-settings tool</title>
+<style>
+  body{margin:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1d1c1a;background:#f4f3ee;line-height:1.6;}
+  .wrap{max-width:720px;margin:0 auto;padding:32px 22px 80px;}
+  h1{font-size:24px;font-weight:600;margin:0 0 4px;}
+  h2{font-size:17px;font-weight:600;margin:28px 0 8px;}
+  .sub{color:#5f5e5a;margin:0 0 8px;}
+  .bm{display:inline-block;background:#9E2A2A;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600;font-size:15px;}
+  .card{background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:18px 20px;margin:14px 0;}
+  code,pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;}
+  pre{background:#26251f;color:#f3f1e9;padding:14px;border-radius:8px;overflow:auto;white-space:pre-wrap;word-break:break-all;}
+  ol{padding-left:20px;} li{margin:6px 0;}
+  .warn{background:#faeeda;color:#854f0b;border-radius:8px;padding:11px 14px;font-size:14px;margin:14px 0;}
+  button.copy{background:#fff;border:1px solid rgba(0,0,0,.25);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;margin-top:8px;}
+  a{color:#185fa5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Run the live school-settings tool</h1>
+  <p class="sub">This loads the redesigned school-admin settings on top of trainchinese.com and reads/writes the account you're logged into. Design-only preview (no login needed): <a href="https://maxrenneberg.github.io/tc-school-redesign/">the demo</a>.</p>
+
+  <div class="warn"><strong>Use a test account.</strong> It really saves. A few school-only features (remove teacher, permission toggles, give-subscription) only appear on an account that has multiple teachers and seats.</div>
+
+  <h2>1. Add the bookmarklet</h2>
+  <div class="card">
+    <p class="sub" style="margin-top:0">Drag this button up to your bookmarks bar (or right-click it → "Add to bookmarks"):</p>
+    <a class="bm" href="javascript:(function(){var s=document.createElement('script');s.src='https://maxrenneberg.github.io/tc-school-redesign/live.js?t='+Date.now();document.body.appendChild(s);})();">TC School Settings</a>
+    <p class="sub" style="margin:16px 0 0">…or create a bookmark manually and paste this as its URL / address:</p>
+    <pre id="code">javascript:(function(){var s=document.createElement('script');s.src='https://maxrenneberg.github.io/tc-school-redesign/live.js?t='+Date.now();document.body.appendChild(s);})();</pre>
+    <button class="copy" id="cp">Copy bookmarklet</button>
+  </div>
+
+  <h2>2. Open it</h2>
+  <ol>
+    <li>Log into a <strong>teacher or school</strong> account on <a href="https://www.trainchinese.com/v2/">trainchinese.com/v2</a>.</li>
+    <li>While on any <code>/v2/</code> page, click the <strong>TC School Settings</strong> bookmark.</li>
+    <li>The redesigned settings panel opens, wired to that account.</li>
+  </ol>
+
+  <h2>If the bookmark is fiddly</h2>
+  <p class="sub">Open the browser dev console (F12) on a <code>/v2/</code> page and paste this one line:</p>
+  <pre id="code2">var s=document.createElement('script');s.src='https://maxrenneberg.github.io/tc-school-redesign/live.js?t='+Date.now();document.body.appendChild(s);</pre>
+  <button class="copy" id="cp2">Copy console line</button>
+</div>
+<script>
+  function wire(btnId, codeId){var b=document.getElementById(btnId);b.onclick=function(){var t=document.getElementById(codeId).textContent;navigator.clipboard.writeText(t).then(function(){b.textContent='Copied!';setTimeout(function(){b.textContent=btnId==='cp'?'Copy bookmarklet':'Copy console line';},1500);});};}
+  wire('cp','code'); wire('cp2','code2');
+</script>
+</body>
+</html>
