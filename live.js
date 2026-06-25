@@ -49,7 +49,7 @@
   +'#tcr-toast.on{opacity:1;}';
 
   var root=document.createElement('div'); root.id='tcr-root';
-  var sec=[['classes','ti-school','Classes',true],['students','ti-users-group','Students',false],['lists','ti-books','Word lists',false],['seats','ti-license','Subscriptions',false],['teachers','ti-users','Teachers',false],['notify','ti-bell','Email updates',false],['account','ti-user-cog','Account',false]];
+  var sec=[['classes','ti-school','Classes',true],['school','ti-building','School',true],['students','ti-users-group','Students',false],['lists','ti-books','Word lists',false],['seats','ti-license','Subscriptions',false],['teachers','ti-users','Teachers',false],['notify','ti-bell','Email updates',false],['account','ti-user-cog','Account',false]];
   var navH='', secH='';
   sec.forEach(function(s){navH+='<a data-id="'+s[0]+'"><i class="ti '+s[1]+'" style="font-size:17px"></i>'+s[2]+'</a>';secH+='<section id="ts-'+s[0]+'"><div class="body"></div></section>';});
   root.innerHTML='<style>'+css+'</style><div id="tcr-ov"><div id="tcr-panel">'
@@ -284,13 +284,40 @@
   }
 
   // ===== SUBSCRIPTIONS (preview) =====
+  var acctCache=null;
+  function loadAccountConfig(cb){
+    if(acctCache){cb(acctCache);return;}
+    fetch(base+'viewAccountConfig.php',{credentials:'include'}).then(function(r){return r.text();}).then(function(html){
+      var d=new DOMParser().parseFromString(html,'text/html'); var T=(d.body?d.body.textContent:'').replace(/\s+/g,' ');
+      function between(a,b){var m=T.match(new RegExp(a+'\\s*:?\\s*([\\s\\S]*?)\\s*(?:'+b+')','i'));return m?m[1].trim().slice(0,60):'';}
+      var profile={name:between('name of school\\)','Type of school'),type:between('Type of school','Number of Students'),students:(T.match(/Number of Students\s*:?\s*(\d+)/i)||[])[1]||'',chars:(T.match(/I teach using\s+(simplified|traditional)/i)||[])[1]||'',textbooks:between('Textbook\\(s\\) used in class','Useful information|Edit this data|You are|Nickname')};
+      var seats=[]; [].slice.call(d.querySelectorAll('table tr')).forEach(function(tr){
+        var tds=[].slice.call(tr.querySelectorAll('td')).map(function(td){return td.textContent.replace(/\s+/g,' ').trim();});
+        if(tds.length>=4){var nums=tds.filter(function(x){return /^\d+$/.test(x);});if(nums.length>=3)seats.push({code:tds[0]||'',purchased:+nums[nums.length-3],used:+nums[nums.length-2],available:+nums[nums.length-1],period:(tds.filter(function(x){return /until|Expired/i.test(x);})[0]||'')});}
+      });
+      acctCache={profile:profile,seats:seats}; cb(acctCache);
+    }).catch(function(){cb({profile:{},seats:[]});});
+  }
+  function renderSchool(){
+    var b=body('school'); if(!b)return;
+    b.innerHTML=hd('Your school','Basic details about your school — read live from your account.',true)+'<div id="sch-body" style="color:var(--ts)">Reading your school details…</div>';
+    loadAccountConfig(function(a){
+      var p=a.profile||{}; var el=document.querySelector('#ts-school #sch-body'); if(!el)return;
+      var rows=[['School name',p.name],['School type',p.type],['Number of students',p.students],['Character style',p.chars?(p.chars.charAt(0).toUpperCase()+p.chars.slice(1)+' Chinese'):''],['Textbooks',p.textbooks]];
+      var any=rows.some(function(r){return r[1];});
+      el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">'+rows.map(function(r){return '<div><div style="font-size:13px;color:var(--ts)">'+r[0]+'</div><div style="font-size:15px;margin-top:2px">'+(r[1]||'<span style="color:var(--tt)">not set</span>')+'</div></div>';}).join('')+'</div>'+(any?'':'<div style="font-size:13px;color:var(--tt);margin-top:10px">No school profile filled in on this account.</div>')+'<div style="margin-top:14px"><button onclick="window.open(\''+base+'viewAccountConfig.php\')"><i class="ti ti-edit" style="font-size:15px;vertical-align:-3px;margin-right:5px"></i>Edit on trainchinese ↗</button></div>';
+    });
+  }
   function renderSeats(){
     var b=body('seats'); if(!b)return;
-    b.innerHTML=hd('Student subscriptions','See how many subscriptions you have and free up unused ones.',false)
-      +previewNote('Live subscription figures come from your account page; reading them in is a next step.')
-      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">'
-      +[['You have','300'],['In use','275'],['Still free','25']].map(function(t){return '<div style="background:var(--bg2);border-radius:8px;padding:12px 14px"><div style="font-size:12px;color:var(--ts)">'+t[0]+'</div><div style="font-size:22px;font-weight:500">'+t[1]+'</div></div>';}).join('')
-      +'</div><div style="margin-top:12px"><button onclick="window.open(\''+DEMO+'\')">View full design</button></div>';
+    b.innerHTML=hd('Student subscriptions','How many subscriptions you have — read live from your account.',true)+'<div id="seat-body" style="color:var(--ts)">Reading your subscriptions…</div>';
+    loadAccountConfig(function(a){
+      var el=document.querySelector('#ts-seats #seat-body'); if(!el)return; var s=a.seats||[];
+      if(!s.length){el.innerHTML='<div style="font-size:14px;color:var(--ts)">No purchased subscriptions on this account. On a provisioned school account, your seat totals and codes appear here.</div>';return;}
+      var active=s.filter(function(x){return !/Expired/i.test(x.period);});
+      var tot=active.reduce(function(n,x){return n+(x.purchased||0);},0),used=active.reduce(function(n,x){return n+(x.used||0);},0),free=active.reduce(function(n,x){return n+(x.available||0);},0);
+      el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">'+[['You have',tot],['In use',used],['Still free',free]].map(function(t){return '<div style="background:var(--bg2);border-radius:8px;padding:12px 14px"><div style="font-size:12px;color:var(--ts)">'+t[0]+'</div><div style="font-size:22px;font-weight:500">'+t[1]+'</div></div>';}).join('')+'</div><div style="margin-top:14px;font-size:14px;font-weight:500">Your subscription batches</div>'+s.map(function(x){var exp=/Expired/i.test(x.period);return '<div class="tcr-row"><div style="flex:1"><div style="font-size:14px">'+x.used+' of '+x.purchased+' used</div><div style="font-size:12px;color:var(--ts)">'+(x.period||'')+'</div></div><span class="pill '+(exp?'prev':'live')+'">'+(exp?'Expired':'Active')+'</span></div>';}).join('');
+    });
   }
   // ===== TEACHERS / NOTIFY / ACCOUNT (preview cards) =====
   function previewCard(id,title,sub,bullets){
@@ -338,7 +365,7 @@
   }
 
   function renderAll(){
-    var R=[['classes',renderClasses],['students',renderStudents],['lists',renderLists],['seats',renderSeats],
+    var R=[['classes',renderClasses],['school',renderSchool],['students',renderStudents],['lists',renderLists],['seats',renderSeats],
       ['teachers',renderTeachers],
       ['notify',function(){previewCard('notify','Email updates','Choose what we email you about.',['Weekly progress report','Low-subscription warning','Tips and product news']);}],
       ['account',function(){previewCard('account','Account','Your personal login and language.',['Display name','Login email','Password','Country and app language']);}]];
