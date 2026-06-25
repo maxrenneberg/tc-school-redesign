@@ -300,9 +300,46 @@
       +'<div style="margin-top:12px"><button onclick="window.open(\''+DEMO+'\')">Open full design ↗</button></div>';
   }
 
+  // ===== TEACHERS (LIVE add via teacherAddBySchool.php; remove/permissions preview) =====
+  function renderTeachers(){
+    var b=body('teachers'); if(!b)return;
+    b.innerHTML=hd('Teachers','Invite teachers to help run your school.',true)
+      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-flask" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5"><strong style="font-weight:500">Inviting a teacher saves live.</strong> Removing teachers and the school permission toggles appear on multi-teacher accounts and are still <span class="pill prev">preview</span>.</span></div>'
+      +'<div style="background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:14px;font-weight:500;margin-bottom:4px">Invite a teacher</div>'
+      +'<div style="font-size:12px;color:var(--tt);margin-bottom:10px">We email them a login link. If they are new to trainchinese, we create their account.</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px"><div><label style="font-size:13px;color:var(--ts)">Their email '+qm('We email a login link to this address.')+'</label><input id="tc-email" type="email" placeholder="teacher@school.edu" style="width:100%;margin-top:4px"/></div><div><label style="font-size:13px;color:var(--ts)">Username '+qm('A short name they log in with, e.g. ms_lim.')+'</label><input id="tc-user" placeholder="ms_lim" style="width:100%;margin-top:4px"/></div></div>'
+      +'<button class="p" id="tc-send" style="margin-top:12px">Send invite</button></div>'
+      +'<div id="tc-list" style="color:var(--ts)">Reading your teachers…</div>';
+    b.querySelector('#tc-send').onclick=function(){
+      var em=(b.querySelector('#tc-email').value||'').trim(), un=(b.querySelector('#tc-user').value||'').trim();
+      if(!em||!un){toast('Enter an email and a username');return;}
+      var btn=b.querySelector('#tc-send'); btn.disabled=true; btn.textContent='Sending…';
+      var bd=new URLSearchParams({rAp:rAp,xreg:'10',e0:em,Name0:un,difTimeMin:String(-new Date().getTimezoneOffset())});
+      fetch(base+'teacherAddBySchool.php',{method:'POST',credentials:'include',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:bd}).then(function(res){
+        if(!res.ok)throw new Error('status '+res.status);
+        toast('Invite sent to '+un); b.querySelector('#tc-email').value='';b.querySelector('#tc-user').value='';btn.disabled=false;btn.textContent='Send invite';
+        setTimeout(loadTeachers,600);
+      }).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Send invite';});
+    };
+    loadTeachers();
+  }
+  function loadTeachers(){
+    fetch(base+'teacherAddBySchool.php',{credentials:'include'}).then(function(r){return r.text();}).then(function(html){
+      var d=new DOMParser().parseFromString(html,'text/html'); var rows=[];
+      [].slice.call(d.querySelectorAll('tr,li,div')).forEach(function(e){
+        if(e.children.length>8)return; var txt=(e.textContent||'').replace(/\s+/g,' ').trim();
+        if(!/Remove|Send email/i.test(txt))return; var m=txt.match(/([^@\s][^@]*?)\s+([\w.+-]+@[\w.-]+\.\w+)/);
+        if(m && rows.length<80 && !rows.find(function(x){return x.email===m[2];}))rows.push({name:m[1].trim().slice(0,40),email:m[2]});
+      });
+      var el=document.querySelector('#ts-teachers #tc-list'); if(!el)return;
+      if(!rows.length){el.innerHTML='<div style="color:var(--ts);font-size:14px">No other teachers yet — invite one above.</div>';return;}
+      el.innerHTML='<div style="font-size:13px;color:var(--ts);margin-bottom:6px">'+rows.length+' teacher'+(rows.length===1?'':'s')+' in your school</div>'+rows.map(function(t){var ini=(t.name.replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0].toUpperCase();}).join(''))||'T';return '<div class="tcr-row"><div style="width:32px;height:32px;border-radius:50%;background:var(--info);color:var(--tinfo);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500">'+ini+'</div><div style="flex:1;min-width:0"><div style="font-size:14px">'+t.name+'</div><div style="font-size:12px;color:var(--ts)">'+t.email+'</div></div><button class="d" disabled title="Available on multi-teacher school accounts" style="opacity:.5">Remove</button></div>';}).join('');
+    }).catch(function(e){var el=document.querySelector('#ts-teachers #tc-list');if(el)el.innerHTML='<div style="color:'+RED+'">Could not read teachers: '+e.message+'</div>';});
+  }
+
   function renderAll(){
     var R=[['classes',renderClasses],['students',renderStudents],['lists',renderLists],['seats',renderSeats],
-      ['teachers',function(){previewCard('teachers','Teachers','Manage the teachers in your school and their roles.',['Invite a teacher by email','Set Admin or Teacher role','Per-teacher permissions','Remove a teacher']);}],
+      ['teachers',renderTeachers],
       ['notify',function(){previewCard('notify','Email updates','Choose what we email you about.',['Weekly progress report','Low-subscription warning','Tips and product news']);}],
       ['account',function(){previewCard('account','Account','Your personal login and language.',['Display name','Login email','Password','Country and app language']);}]];
     R.forEach(function(p){try{p[1]();}catch(e){var b=body(p[0]);if(b)b.innerHTML='<div style="color:'+RED+'">Section error: '+e.message+'</div>';}});
