@@ -218,7 +218,7 @@
     if(!ls.gid)ls.gid=classes[0].gid;
     var opts=classes.map(function(c){return '<option value="'+c.gid+'"'+(c.gid===ls.gid?' selected':'')+'>'+c.name+'</option>';}).join('');
     b.innerHTML=hd('Word lists','Tick a list to add it to a class — newly wired to save on your account.',true)
-      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-flask" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5"><strong style="font-weight:500">Newly wired (beta).</strong> Toggling a list, and the two class settings below, save on your account. The Chinese-character / pinyin dropdowns are still <span class="pill prev">preview</span>.</span></div>'
+      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-flask" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5"><strong style="font-weight:500">All live.</strong> Toggling a list, the two class settings, and the Chinese-display dropdowns below all save on your account.</span></div>'
       +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span style="font-size:14px">Set up class '+qm('Each class has its own word lists. Pick a class, then tick the lists it studies.')+'</span><select id="l-cls">'+opts+'</select><span id="l-count" style="font-size:13px;color:var(--ts)"></span><button id="l-rl" style="font-size:12px;padding:6px 10px">Refresh</button></div>'
       +'<div id="l-settings"></div>'
       +'<input id="l-q" placeholder="Search lists" style="width:100%;margin-bottom:8px"/>'
@@ -240,7 +240,7 @@
       if(done||ls.ifr!==ifr)return;
       var doc; try{doc=ifr.contentDocument;}catch(e){doc=null;}
       var btns=doc?[].slice.call(doc.querySelectorAll('a,button')).filter(function(e){return /Stop sharing|Start sharing/i.test(e.textContent);}):[];
-      if(btns.length){done=true;ls.rows=btns.map(function(btn){var h=btn.closest('li,tr,div')||btn.parentElement;var name=(h?h.textContent:'').replace(/\s+/g,' ').split(/Stop sharing|Start sharing|Show list|Assign list/)[0].replace(/[^\w .-]/g,'').trim();var nums=((btn.getAttribute('onclick')||'').match(/-?\d+/g)||[]).map(Number);return {name:name,shared:/Stop sharing/i.test(btn.textContent),listId:nums[0],xreg:nums[1],friendId:nums[2],groupId:nums[3]};}).filter(function(r){return r.name&&r.listId;});try{var _n=doc.querySelector('input[name="cbShareNotes"]');ls.notes=_n?{found:true,on:!!_n.checked}:{found:false};var _p=doc.querySelector('input[name="cbShareShareLists"]');ls.posting=_p?{found:true,on:!!_p.checked}:{found:false};}catch(e){}paintSettings();paintRows();return;}
+      if(btns.length){done=true;ls.rows=btns.map(function(btn){var h=btn.closest('li,tr,div')||btn.parentElement;var name=(h?h.textContent:'').replace(/\s+/g,' ').split(/Stop sharing|Start sharing|Show list|Assign list/)[0].replace(/[^\w .-]/g,'').trim();var nums=((btn.getAttribute('onclick')||'').match(/-?\d+/g)||[]).map(Number);return {name:name,shared:/Stop sharing/i.test(btn.textContent),listId:nums[0],xreg:nums[1],friendId:nums[2],groupId:nums[3]};}).filter(function(r){return r.name&&r.listId;});try{var _n=doc.querySelector('input[name="cbShareNotes"]');ls.notes=_n?{found:true,on:!!_n.checked}:{found:false};var _p=doc.querySelector('input[name="cbShareShareLists"]');ls.posting=_p?{found:true,on:!!_p.checked}:{found:false};}catch(e){}try{ls.settings=['ChineseType','Romanization','CustomPacks','AutomaticLogin'].map(function(st){var s=doc.querySelector('select[name^="'+st+'"]');return s?{statId:st,current:s.value,options:[].slice.call(s.options).map(function(o){return {value:o.value,text:o.text.replace(/\s+/g,' ').trim()};})}:null;}).filter(Boolean);}catch(e){ls.settings=ls.settings||[];}paintSettings();paintRows();return;}
       if(att<22){setTimeout(function(){tryRead(att+1);},400);}else if(area){area.innerHTML='<div style="color:'+RED+'">Couldn’t read this class’s lists (page was slow). Press Refresh.</div>';}
     }
     ifr.onload=function(){setTimeout(function(){tryRead(0);},800);};
@@ -264,12 +264,21 @@
       setTimeout(function(){if(ls.ifr)loadClassLists();},500);
     }).catch(function(e){toast('Failed: '+e.message);cb.checked=!cb.checked;cb.disabled=false;});
   }
+  var WSLABEL={ChineseType:'Which characters students see',Romanization:'Pronunciation guide',CustomPacks:'Student-made word sets',AutomaticLogin:'Old student logins'};
   function paintSettings(){
     var el=document.querySelector('#ts-lists #l-settings'); if(!el)return;
+    var dd=(ls.settings||[]).map(function(st){return '<div style="margin:4px 0 10px"><label style="font-size:13px;color:var(--ts)">'+(WSLABEL[st.statId]||st.statId)+'</label><select data-stat="'+st.statId+'" style="width:100%;margin-top:4px">'+st.options.map(function(o){return '<option value="'+o.value+'"'+(o.value===st.current?' selected':'')+'>'+o.text+'</option>';}).join('')+'</select></div>';}).join('');
     function row(label,state,key,hint){if(!state||!state.found)return '';return '<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--bd)"><span style="font-size:14px">'+label+' '+qm(hint)+'</span><input type="checkbox" data-k="'+key+'"'+(state.on?' checked':'')+'/></div>';}
-    var h=row('Share my notes with this class',ls.notes,'notes','Students see notes you add to a word.')+row('Let students post their own lists',ls.posting,'posting','If off, only you decide what this class studies.');
-    el.innerHTML=h?('<div style="font-size:14px;font-weight:500;margin:4px 0 2px">Class settings <span class="pill live">live</span></div>'+h):'';
+    var tg=row('Share my notes with this class',ls.notes,'notes','Students see notes you add to a word.')+row('Let students post their own lists',ls.posting,'posting','If off, only you decide what this class studies.');
+    var inner=(dd||'')+(tg||'');
+    el.innerHTML=inner?('<div style="font-size:14px;font-weight:500;margin:8px 0 8px">How Chinese is shown to students <span class="pill live">live</span></div>'+inner):'';
+    [].forEach.call(el.querySelectorAll('select[data-stat]'),function(s){s.onchange=function(){saveWriterSetting(s.getAttribute('data-stat'),s.value,s);};});
     [].forEach.call(el.querySelectorAll('input[type=checkbox]'),function(cb){cb.onchange=function(){saveSetting(cb.getAttribute('data-k'),cb);};});
+  }
+  function saveWriterSetting(stat,val,sel){
+    sel.disabled=true;
+    var q=new URLSearchParams({rAp:rAp,xreg:val,statId:stat,friendGroupId:String(ls.gid),isAjax:'1'});
+    fetch(base+'friendsGroupChange.php?'+q.toString(),{credentials:'include'}).then(function(res){if(!res.ok)throw new Error('status '+res.status);toast('Setting saved');sel.disabled=false;var st=(ls.settings||[]).filter(function(x){return x.statId===stat;})[0];if(st)st.current=val;}).catch(function(e){toast('Failed: '+e.message);sel.disabled=false;});
   }
   function saveSetting(key,cb){
     var on=cb.checked; cb.disabled=true;
