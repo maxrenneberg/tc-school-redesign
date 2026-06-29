@@ -39,12 +39,20 @@
   .qm .tip{position:absolute; bottom:calc(100% + 9px); left:50%; transform:translateX(-50%); width:230px; max-width:62vw; background:var(--color-text-primary); color:var(--color-background-primary); font-size:12px; font-weight:400; line-height:1.5; text-align:left; padding:9px 11px; border-radius:8px; opacity:0; visibility:hidden; transition:opacity .12s; z-index:70; pointer-events:none;}
   .qm .tip::after{content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:var(--color-text-primary);}
   .qm:hover .tip,.qm:focus .tip{opacity:1; visibility:visible;}
+  #burger{display:none; align-items:center; gap:7px; font-family:var(--font-sans); font-size:14px; color:var(--color-text-primary); background:var(--color-background-primary); border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); padding:9px 13px; cursor:pointer; margin:0 0 14px;}
+  #side .navgrp{font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--color-text-tertiary); padding:13px 8px 4px;}
+  @media (max-width:680px){
+    #side{position:static !important; flex-basis:100% !important; width:100%; display:none !important;}
+    #side.open{display:block !important;}
+    #burger{display:inline-flex;}
+  }
 </style>
 </head>
 <body>
 <div class="demo-banner"><i class="ti ti-eye" aria-hidden="true"></i><span>This is a preview of the new school settings &mdash; click around freely. Nothing you change here is saved. Hover the <span class="qm" tabindex="0" aria-label="example help">?<span class="tip">Like this! A small question mark sits next to every setting. Hover or tap it to see what the setting does.</span></span> marks for help.</span></div>
 <div class="wrap">
 <h2 class="sr-only">Redesigned trainchinese school settings, written in plain language with a help tooltip on every setting.</h2>
+<button id="burger" aria-label="Menu"><i class="ti ti-menu-2" style="font-size:18px;" aria-hidden="true"></i> Menu</button>
 <div style="font-family:var(--font-sans); color:var(--color-text-primary); display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;">
 
   <aside id="side" style="flex:0 0 178px; position:sticky; top:16px;">
@@ -74,20 +82,25 @@
     ['profile','ti-building','School'],
     ['students','ti-users-group','Students'],
     ['lists','ti-books','Word lists'],
-    ['seats','ti-license','Subscriptions'],
     ['teachers','ti-users','Teachers'],
+    ['seats','ti-license','Subscriptions'],
     ['notify','ti-bell','Email updates'],
     ['account','ti-user-cog','Your account']
   ];
-  sections.forEach(([id,ic,label])=>{
-    const a=$(`<a href="#" data-id="${id}" style="display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:var(--border-radius-md); font-size:14px; color:var(--color-text-secondary); border-left:3px solid transparent; text-decoration:none;"><i class="ti ${ic}" style="font-size:17px;" aria-hidden="true"></i>${label}</a>`);
-    a.onclick=e=>{e.preventDefault();document.getElementById('s-'+id).scrollIntoView({behavior:'smooth',block:'start'});};
-    navEl.appendChild(a);
-    main.appendChild($(`<section id="s-${id}" style="background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:20px 22px; scroll-margin-top:16px;"><div class="body"></div></section>`));
-  });
+  const tools=[['ti-list-details','Vocab lists & editing'],['ti-upload','Import vocabulary'],['ti-search','Search dictionary'],['ti-typography','Select fonts']];
+  const meta={}; sections.forEach(s=>meta[s[0]]=s);
+  sections.forEach(([id])=>{main.appendChild($(`<section id="s-${id}" style="background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:20px 22px; display:none;"><div class="body"></div></section>`));});
+  const mkNav=(id)=>{const a=$(`<a href="#" data-id="${id}" style="display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:var(--border-radius-md); font-size:14px; color:var(--color-text-secondary); border-left:3px solid transparent; text-decoration:none;"><i class="ti ${meta[id][1]}" style="font-size:17px;" aria-hidden="true"></i>${meta[id][2]}</a>`);a.onclick=e=>{e.preventDefault();showSection(id);};navEl.appendChild(a);};
+  ['profile','students','lists','teachers','seats'].forEach(mkNav);
+  navEl.appendChild($(`<div class="navgrp">Teaching</div>`));
+  tools.forEach(([ic,label])=>{const a=$(`<a href="#" style="display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:var(--border-radius-md); font-size:14px; color:var(--color-text-secondary); text-decoration:none;"><i class="ti ${ic}" style="font-size:17px;" aria-hidden="true"></i><span style="flex:1;">${label}</span><i class="ti ti-external-link" style="font-size:14px; color:var(--color-text-tertiary);" aria-hidden="true"></i></a>`);a.onclick=e=>{e.preventDefault();sendPrompt(`“${label}” opens in trainchinese in the live tool`);closeMenu();};navEl.appendChild(a);});
+  navEl.appendChild($(`<div class="navgrp">Account</div>`));
+  ['notify','account'].forEach(mkNav);
   document.getElementById('help').onclick=()=>sendPrompt('I need help setting up my school on trainchinese');
-  const setActive=id=>navEl.querySelectorAll('a').forEach(a=>{const on=a.dataset.id===id;a.style.color=on?RED:'var(--color-text-secondary)';a.style.borderLeftColor=on?RED:'transparent';a.style.fontWeight=on?'500':'400';});
-  setActive('profile');
+  document.getElementById('burger').onclick=()=>document.getElementById('side').classList.toggle('open');
+  const setActive=id=>navEl.querySelectorAll('a[data-id]').forEach(a=>{const on=a.dataset.id===id;a.style.color=on?RED:'var(--color-text-secondary)';a.style.borderLeftColor=on?RED:'transparent';a.style.fontWeight=on?'500':'400';});
+  const closeMenu=()=>document.getElementById('side').classList.remove('open');
+  const showSection=id=>{sections.forEach(([sid])=>{const el=document.getElementById('s-'+sid);if(el)el.style.display=(sid===id?'block':'none');});setActive(id);closeMenu();window.scrollTo({top:0,behavior:'smooth'});};
   const body=id=>document.querySelector('#s-'+id+' .body');
   const hd=(t,s)=>`<div style="margin-bottom:14px;"><div style="font-size:17px; font-weight:500;">${t}</div>${s?`<div style="font-size:14px; color:var(--color-text-secondary); margin-top:3px; line-height:1.5;">${s}</div>`:''}</div>`;
   const note=(txt)=>`<div style="display:flex; gap:9px; background:var(--color-background-info); border-radius:var(--border-radius-md); padding:11px 13px; margin-bottom:16px;"><i class="ti ti-info-circle" style="font-size:17px; color:var(--color-text-info); flex-shrink:0; margin-top:1px;" aria-hidden="true"></i><span style="font-size:13px; color:var(--color-text-info); line-height:1.5;">${txt}</span></div>`;
@@ -402,10 +415,7 @@
 
   document.addEventListener('click',e=>{const q=e.target.closest('.qm');if(q){e.stopPropagation();e.preventDefault();q.focus();}},true);
 
-  if('IntersectionObserver' in window){
-    const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)setActive(e.target.id.replace('s-',''));});},{rootMargin:'-10% 0px -70% 0px'});
-    sections.forEach(([id])=>obs.observe(document.getElementById('s-'+id)));
-  }
+  showSection('profile');
 })();
 </script>
 </body>
