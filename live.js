@@ -45,23 +45,33 @@
   +'.qm:hover,.qm:focus{color:#fff;background:'+RED+';border-color:'+RED+';outline:none;}'
   +'.qm .tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:220px;max-width:50vw;background:var(--tp);color:var(--bg);font-size:12px;line-height:1.5;text-align:left;padding:8px 10px;border-radius:8px;opacity:0;visibility:hidden;z-index:30;}'
   +'.qm:hover .tip,.qm:focus .tip{opacity:1;visibility:visible;}'
+  +'#tcr-burger{display:none;padding:5px 9px}'
+  +'#tcr-side .grp{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--tt);padding:13px 10px 4px}'
+  +'#tcr-side a.ext{color:var(--ts)}'
+  +'@media (max-width:680px){#tcr-wrap{flex-direction:column}#tcr-side{flex:none;width:100%;border-right:none;border-bottom:1px solid var(--bd);display:none;max-height:46vh}#tcr-side.open{display:block}#tcr-burger{display:inline-flex}#tcr-main{padding:14px}#tcr-panel{max-height:96vh}}'
   +'#tcr-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--tp);color:var(--bg);padding:11px 17px;border-radius:8px;font-size:13px;z-index:2147483647;opacity:0;transition:.2s;}'
   +'#tcr-toast.on{opacity:1;}';
 
   var root=document.createElement('div'); root.id='tcr-root';
-  var sec=[['classes','ti-school','Classes',true],['school','ti-building','School',true],['students','ti-users-group','Students',false],['lists','ti-books','Word lists',false],['seats','ti-license','Subscriptions',false],['teachers','ti-users','Teachers',false],['notify','ti-bell','Email updates',false],['account','ti-user-cog','Account',false]];
-  var navH='', secH='';
-  sec.forEach(function(s){navH+='<a data-id="'+s[0]+'"><i class="ti '+s[1]+'" style="font-size:17px"></i>'+s[2]+'</a>';secH+='<section id="ts-'+s[0]+'"><div class="body"></div></section>';});
+  var sec=[['classes','ti-school','Classes'],['students','ti-users-group','Students'],['lists','ti-books','Word lists'],['teachers','ti-users','Teachers'],['seats','ti-license','Subscriptions'],['school','ti-building','School']];
+  var acct=[['notify','ti-bell','Email updates'],['account','ti-user-cog','Account']];
+  var tools=[['contents.php','ti-list-details','Vocab lists & editing'],['selectAddMany.php','ti-upload','Import vocabulary'],['search.php','ti-search','Search dictionary'],['viewFontSetting.php','ti-typography','Select fonts']];
+  var panelIds=sec.map(function(s){return s[0];}).concat(acct.map(function(s){return s[0];}));
+  function navItem(s){return '<a data-id="'+s[0]+'"><i class="ti '+s[1]+'" style="font-size:17px"></i>'+s[2]+'</a>';}
+  function toolItem(t){return '<a class="ext" data-url="'+t[0]+'" title="Opens in trainchinese"><i class="ti '+t[1]+'" style="font-size:17px"></i><span style="flex:1">'+t[2]+'</span><i class="ti ti-external-link" style="font-size:14px;color:var(--tt)"></i></a>';}
+  var navH=sec.map(navItem).join('')+'<div class="grp">Teaching</div>'+tools.map(toolItem).join('')+'<div class="grp">Account</div>'+acct.map(navItem).join('');
+  var secH=panelIds.map(function(id){return '<section id="ts-'+id+'" style="display:none"><div class="body"></div></section>';}).join('');
   root.innerHTML='<style>'+css+'</style><div id="tcr-ov"><div id="tcr-panel">'
-    +'<div id="tcr-top"><span style="font-weight:500;font-size:16px">trainchinese</span><span><span class="dot" style="background:#EF9F27"></span> <span class="dot" style="background:'+RED+'"></span></span>'
+    +'<div id="tcr-top"><button id="tcr-burger" aria-label="Menu"><i class="ti ti-menu-2" style="font-size:18px"></i></button><span style="font-weight:500;font-size:16px">trainchinese</span><span><span class="dot" style="background:#EF9F27"></span> <span class="dot" style="background:'+RED+'"></span></span>'
     +'<span style="font-size:15px;font-weight:500;margin-left:2px">School settings</span>'
     +'<span class="pill live" style="margin-left:6px">Connected to your account</span>'
     +'<button id="tcr-x" style="margin-left:auto;padding:5px 10px">Close</button></div>'
     +'<div id="tcr-wrap"><nav id="tcr-side">'+navH+'</nav><main id="tcr-main">'+secH+'</main></div>'
     +'</div></div><div id="tcr-toast"></div>';
   document.body.appendChild(root);
-  document.getElementById('tcr-x').onclick=function(){teardownLs();teardownSt();root.remove();};
+  document.getElementById('tcr-x').onclick=function(){teardownLs();teardownSt();if(typeof teardownTc==='function')teardownTc();root.remove();};
   document.getElementById('tcr-ov').onclick=function(e){if(e.target.id==='tcr-ov')root.remove();};
+  document.getElementById('tcr-burger').onclick=function(){document.getElementById('tcr-side').classList.toggle('open');};
 
   var toastT; function toast(m){var t=document.getElementById('tcr-toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on');},2600);}
   var prev=function(m){toast((m||'This action')+' — preview, not saved yet');};
@@ -70,14 +80,13 @@
   function hd(t,sub,live){return '<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:17px;font-weight:500">'+t+'</div><span class="pill '+(live?'live':'prev')+'">'+(live?'Live · saves':'Preview')+'</span>'+(sub?'<div style="font-size:14px;color:var(--ts);flex-basis:100%;margin-top:2px">'+sub+'</div>':'')+'</div>';}
   function previewNote(txt){return '<div style="display:flex;gap:9px;background:var(--warn);border-radius:8px;padding:11px 13px;margin-bottom:14px"><i class="ti ti-eye" style="color:var(--twarn);font-size:17px"></i><span style="font-size:13px;color:var(--twarn);line-height:1.5">'+txt+' <a href="'+DEMO+'" target="_blank" style="color:var(--twarn);text-decoration:underline">See the full design</a>.</span></div>';}
 
-  // nav
+  // nav / router
   function setActive(id){[].forEach.call(document.querySelectorAll('#tcr-side a'),function(a){a.classList.toggle('on',a.dataset.id===id);});}
-  [].forEach.call(document.querySelectorAll('#tcr-side a'),function(a){a.onclick=function(){setActive(a.dataset.id);document.getElementById('ts-'+a.dataset.id).scrollIntoView({behavior:'smooth',block:'start'});};});
-  setActive('classes');
+  [].forEach.call(document.querySelectorAll('#tcr-side a'),function(a){a.onclick=function(e){if(e&&e.preventDefault)e.preventDefault();var sd=document.getElementById('tcr-side');if(a.dataset.url){window.open(base+a.dataset.url+(a.dataset.url.indexOf('?')<0?'?':'&')+'rAp='+rAp,'_blank');if(sd)sd.classList.remove('open');return;}showSection(a.dataset.id);};});
 
   function api(file,params){var q=new URLSearchParams(Object.assign({rAp:rAp,isAjax:'1'},params||{}));return fetch(base+file+'?'+q.toString(),{credentials:'include'});}
 
-  var classes=[];
+  var classes=[], classesReady=false;
   function parseClasses(doc){
     var map=new Map();
     doc.querySelectorAll('a[href*="friendsGroupChange"]').forEach(function(a){
@@ -90,7 +99,7 @@
   }
   function loadClasses(cb){
     fetch(base+'friendsOrganize.php',{credentials:'include'}).then(function(r){return r.text();}).then(function(html){
-      classes=parseClasses(new DOMParser().parseFromString(html,'text/html')); if(cb)cb();
+      classes=parseClasses(new DOMParser().parseFromString(html,'text/html')); classesReady=true; if(cb)cb();
     }).catch(function(e){var b=body('classes');if(b)b.innerHTML='<div style="color:'+RED+'">Could not load classes: '+e.message+'</div>';});
   }
   function classNames(){return classes.map(function(c){return c.name;});}
@@ -102,7 +111,7 @@
     var h=hd('Classes','Create, view and delete your classes. Changes here save to your trainchinese account right away.',true);
     h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px"><span style="font-size:13px;color:var(--ts)">'+classes.length+' classes · '+total+' students</span><button class="p" id="c-add" style="margin-left:auto">+ Add a class</button><button id="c-reload">Refresh</button></div>';
     h+='<div id="c-addform" style="display:none;background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:13px;color:var(--ts);margin-bottom:6px">Name for the new class '+qm('Pick any name, e.g. P3-A or Beginners. You can delete it again any time.')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="c-name" placeholder="e.g. P3-A" style="flex:1;min-width:180px"/><button class="p" id="c-create">Create class</button></div></div>';
-    if(!classes.length)h+='<div style="color:var(--ts);padding:8px 0">No classes yet.</div>';
+    if(!classes.length)h+='<div style="color:var(--ts);padding:8px 0">'+(classesReady?'No classes yet.':'Loading your classes…')+'</div>';
     classes.forEach(function(c){
       h+='<div class="tcr-row"><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:500">'+c.name+'</div><div style="font-size:12px;color:var(--ts)">'+c.count+' student'+(c.count===1?'':'s')+(c.assigned?(' · teacher: '+c.assigned):'')+'</div></div>'
         +'<a href="'+base+'friendsGroupChange.php?xreg=3&returnFile=friendsOrganize&friendGroupId='+c.gid+'&rAp='+rAp+'" target="_blank" style="font-size:13px;color:var(--tinfo);text-decoration:none">Open</a>'
@@ -110,11 +119,11 @@
         +'<button class="d c-del" data-gid="'+c.gid+'" data-name="'+c.name.replace(/"/g,'')+'">Delete</button></div>';
     });
     b.innerHTML=h;
-    b.querySelector('#c-reload').onclick=function(){loadClasses(renderAll);};
+    b.querySelector('#c-reload').onclick=function(){loadClasses(renderActive);};
     b.querySelector('#c-add').onclick=function(){var f=b.querySelector('#c-addform');f.style.display=f.style.display==='none'?'block':'none';var n=b.querySelector('#c-name');if(n)n.focus();};
-    b.querySelector('#c-create').onclick=function(){var nm=(b.querySelector('#c-name').value||'').trim();if(!nm){toast('Type a class name first');return;}var btn=b.querySelector('#c-create');btn.disabled=true;btn.textContent='Saving…';api('friendsOrganize.php',{xreg:'101',newClass:nm}).then(function(){toast('Class “'+nm+'” saved');loadClasses(renderAll);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Create class';});};
-    [].forEach.call(b.querySelectorAll('.c-del'),function(btn){btn.onclick=function(){var gid=btn.dataset.gid,name=btn.dataset.name;if(!confirm('Delete class “'+name+'”? This cannot be undone.'))return;btn.disabled=true;btn.textContent='…';api('friendsGroupChange.php',{xreg:'5',friendGroupId:gid,returnFile:'friendsOrganize'}).then(function(){toast('Deleted “'+name+'”');loadClasses(renderAll);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Delete';});};});
-    [].forEach.call(b.querySelectorAll('.c-ren'),function(btn){btn.onclick=function(){var gid=btn.dataset.gid,name=btn.dataset.name;var nn=prompt('New name for “'+name+'”:',name);if(nn===null)return;nn=nn.trim();if(!nn||nn===name)return;btn.disabled=true;var bd=new URLSearchParams({rAp:rAp,xreg:'2',friendGroupId:gid,addName:nn,returnFile:'friendsOrganize'});fetch(base+'friendsGroupChange.php',{method:'POST',credentials:'include',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:bd}).then(function(res){if(!res.ok)throw new Error('status '+res.status);toast('Renamed to “'+nn+'”');loadClasses(renderAll);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;});};});
+    b.querySelector('#c-create').onclick=function(){var nm=(b.querySelector('#c-name').value||'').trim();if(!nm){toast('Type a class name first');return;}var btn=b.querySelector('#c-create');btn.disabled=true;btn.textContent='Saving…';api('friendsOrganize.php',{xreg:'101',newClass:nm}).then(function(){toast('Class “'+nm+'” saved');loadClasses(renderActive);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Create class';});};
+    [].forEach.call(b.querySelectorAll('.c-del'),function(btn){btn.onclick=function(){var gid=btn.dataset.gid,name=btn.dataset.name;if(!confirm('Delete class “'+name+'”? This cannot be undone.'))return;btn.disabled=true;btn.textContent='…';api('friendsGroupChange.php',{xreg:'5',friendGroupId:gid,returnFile:'friendsOrganize'}).then(function(){toast('Deleted “'+name+'”');loadClasses(renderActive);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Delete';});};});
+    [].forEach.call(b.querySelectorAll('.c-ren'),function(btn){btn.onclick=function(){var gid=btn.dataset.gid,name=btn.dataset.name;var nn=prompt('New name for “'+name+'”:',name);if(nn===null)return;nn=nn.trim();if(!nn||nn===name)return;btn.disabled=true;var bd=new URLSearchParams({rAp:rAp,xreg:'2',friendGroupId:gid,addName:nn,returnFile:'friendsOrganize'});fetch(base+'friendsGroupChange.php',{method:'POST',credentials:'include',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:bd}).then(function(res){if(!res.ok)throw new Error('status '+res.status);toast('Renamed to “'+nn+'”');loadClasses(renderActive);}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;});};});
   }
 
   // ===== STUDENTS (LIVE: read roster via iframe, add/remove via friendsGroupChange.php xreg 10=add / 11=remove) =====
@@ -443,15 +452,14 @@
     [].forEach.call(el.querySelectorAll('.tc-rm'),function(btn){btn.onclick=function(){var t=tc.rows[+btn.getAttribute('data-i')];if(!t)return;if(!confirm('Remove teacher '+t.name+' ('+t.email+') from your school?'))return;btn.disabled=true;btn.textContent='…';try{t.rm.click();toast('Removing '+t.name+'…');setTimeout(loadTeachers,1400);}catch(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Remove';}};});
   }
 
-  function renderAll(){
-    var R=[['classes',renderClasses],['school',renderSchool],['students',renderStudents],['lists',renderLists],['seats',renderSeats],
-      ['teachers',renderTeachers],
-      ['notify',function(){previewCard('notify','Email updates','Choose what we email you about.',['Weekly progress report','Low-subscription warning','Tips and product news']);}],
-      ['account',function(){previewCard('account','Account','Your personal login and language.',['Display name','Login email','Password','Country and app language']);}]];
-    R.forEach(function(p){try{p[1]();}catch(e){var b=body(p[0]);if(b)b.innerHTML='<div style="color:'+RED+'">Section error: '+e.message+'</div>';}});
-  }
+  function notifyCard(){previewCard('notify','Email updates','Choose what we email you about.',['Weekly progress report','Low-subscription warning','Tips and product news']);}
+  function accountCard(){previewCard('account','Account','Your personal login and language.',['Display name','Login email','Password','Country and app language']);}
+  var R={classes:renderClasses,school:renderSchool,students:renderStudents,lists:renderLists,seats:renderSeats,teachers:renderTeachers,notify:notifyCard,account:accountCard};
+  var active=null, renderedSet={};
+  function renderActive(){if(active&&R[active]){try{R[active]();}catch(e){var b=body(active);if(b)b.innerHTML='<div style="color:'+RED+'">Section error: '+e.message+'</div>';}}}
+  function showSection(id){active=id;setActive(id);panelIds.forEach(function(pid){var el=document.getElementById('ts-'+pid);if(el)el.style.display=(pid===id?'block':'none');});if(!renderedSet[id]){renderedSet[id]=true;renderActive();}var sd=document.getElementById('tcr-side');if(sd)sd.classList.remove('open');var m=document.getElementById('tcr-main');if(m)m.scrollTop=0;}
 
-  if(!rAp){body('classes').innerHTML='<div style="color:'+RED+'">Couldn’t find your session. Open this while logged in on a trainchinese.com/v2 page (e.g. Classes), then click the bookmarklet again.</div>';return;}
-  body('classes').innerHTML='Loading your classes…';
-  loadClasses(renderAll);
+  if(!rAp){showSection('classes');var bc=body('classes');if(bc)bc.innerHTML='<div style="color:'+RED+'">Couldn’t find your session. Open this while logged in on a trainchinese.com/v2 page (e.g. Classes), then click the bookmarklet again.</div>';return;}
+  showSection('classes');
+  loadClasses(function(){if(active==='classes')renderClasses();});
 })();
