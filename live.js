@@ -53,9 +53,9 @@
   +'#tcr-toast.on{opacity:1;}';
 
   var root=document.createElement('div'); root.id='tcr-root';
-  var sec=[['classes','ti-school','Classes'],['students','ti-users-group','Students'],['lists','ti-books','Word lists'],['teachers','ti-users','Teachers'],['seats','ti-license','Subscriptions'],['school','ti-building','School']];
+  var sec=[['classes','ti-school','Classes'],['students','ti-users-group','Students'],['lists','ti-books','Word lists'],['mylists','ti-list-details','My vocab lists'],['teachers','ti-users','Teachers'],['seats','ti-license','Subscriptions'],['school','ti-building','School']];
   var acct=[['notify','ti-bell','Email updates'],['account','ti-user-cog','Account']];
-  var tools=[['contents.php','ti-list-details','Vocab lists & editing'],['selectAddMany.php','ti-upload','Import vocabulary'],['search.php','ti-search','Search dictionary'],['viewFontSetting.php','ti-typography','Select fonts']];
+  var tools=[['selectAddMany.php','ti-upload','Import vocabulary'],['search.php','ti-search','Search dictionary'],['viewFontSetting.php','ti-typography','Select fonts']];
   var panelIds=sec.map(function(s){return s[0];}).concat(acct.map(function(s){return s[0];}));
   function navItem(s){return '<a data-id="'+s[0]+'"><i class="ti '+s[1]+'" style="font-size:17px"></i>'+s[2]+'</a>';}
   function toolItem(t){return '<a class="ext" data-url="'+t[0]+'" title="Opens in trainchinese"><i class="ti '+t[1]+'" style="font-size:17px"></i><span style="flex:1">'+t[2]+'</span><i class="ti ti-external-link" style="font-size:14px;color:var(--tt)"></i></a>';}
@@ -454,7 +454,49 @@
 
   function notifyCard(){previewCard('notify','Email updates','Choose what we email you about.',['Weekly progress report','Low-subscription warning','Tips and product news']);}
   function accountCard(){previewCard('account','Account','Your personal login and language.',['Display name','Login email','Password','Country and app language']);}
-  var R={classes:renderClasses,school:renderSchool,students:renderStudents,lists:renderLists,seats:renderSeats,teachers:renderTeachers,notify:notifyCard,account:accountCard};
+  // ===== MY VOCAB LISTS (LIVE: create/rename/delete via contentsGetList.php) =====
+  var ml={lists:[]};
+  function renderMyLists(){
+    var b=body('mylists'); if(!b)return;
+    b.innerHTML=hd('My vocab lists','Create and manage your own word lists — saves live.',true)
+      +'<div style="display:flex;gap:9px;background:var(--info);border-radius:8px;padding:11px 13px;margin-bottom:12px"><i class="ti ti-info-circle" style="color:var(--tinfo);font-size:17px"></i><span style="font-size:13px;color:var(--tinfo);line-height:1.5">Create, rename and delete your own lists here. To add or edit the <b style="font-weight:500">words inside</b> a list, press <b style="font-weight:500">Open</b> (the full word editor opens in trainchinese for now).</span></div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><input id="ml-name" placeholder="Name a new list, e.g. P3 Unit 1" style="flex:1;min-width:200px"/><button class="p" id="ml-create">Create list</button><button id="ml-reload">Refresh</button></div>'
+      +'<div id="ml-area" style="color:var(--ts)">Reading your lists…</div>';
+    b.querySelector('#ml-create').onclick=function(){var nm=(b.querySelector('#ml-name').value||'').trim();if(!nm){toast('Type a list name first');return;}createList(nm,b.querySelector('#ml-create'));};
+    b.querySelector('#ml-reload').onclick=function(){loadMyLists();};
+    loadMyLists();
+  }
+  function loadMyLists(){
+    var area=document.querySelector('#ts-mylists #ml-area'); if(area)area.textContent='Reading your lists…';
+    fetch(base+'contents.php',{credentials:'include'}).then(function(r){return r.text();}).then(function(html){
+      var d=new DOMParser().parseFromString(html,'text/html'); var map={};
+      [].slice.call(d.querySelectorAll('[onclick*="showList"]')).forEach(function(e){
+        var m=(e.getAttribute('onclick')||'').match(/showList\((\d+)/); if(!m)return; var id=m[1];
+        var host=e.closest('li,tr,div')||e; var txt=(host.textContent||'').replace(/\s+/g,' ').trim();
+        if(/By:/.test(txt))return;
+        var name=txt.replace(/\s*\(\d+\)\s*$/,'').replace(/Show list/ig,'').replace(/^[•\-\s]+/,'').trim().slice(0,60);
+        if(name && !map[id]) map[id]={id:id,name:name};
+      });
+      ml.lists=Object.keys(map).map(function(k){return map[k];}); paintMyLists();
+    }).catch(function(e){if(area)area.innerHTML='<div style="color:'+RED+'">Could not read your lists: '+e.message+'</div>';});
+  }
+  function paintMyLists(){
+    var area=document.querySelector('#ts-mylists #ml-area'); if(!area)return;
+    if(!ml.lists.length){area.innerHTML='<div style="color:var(--ts);font-size:14px">No lists of your own yet — create one above.</div>';return;}
+    area.innerHTML='<div style="font-size:13px;color:var(--ts);margin-bottom:6px">'+ml.lists.length+' of your lists</div>'+ml.lists.map(function(l){return '<div class="tcr-row"><i class="ti ti-list" style="font-size:18px;color:var(--ts)"></i><div style="flex:1;min-width:0;font-size:14px">'+l.name+'</div><button class="ml-open" data-id="'+l.id+'" style="font-size:12px"><i class="ti ti-pencil" style="font-size:14px;vertical-align:-2px;margin-right:3px"></i>Open</button><button class="ml-ren" data-id="'+l.id+'" data-name="'+l.name.replace(/"/g,'')+'" style="font-size:12px">Rename</button><button class="d ml-del" data-id="'+l.id+'" data-name="'+l.name.replace(/"/g,'')+'" style="font-size:12px">Delete</button></div>';}).join('');
+    [].forEach.call(area.querySelectorAll('.ml-open'),function(btn){btn.onclick=function(){window.open(base+'contents.php?listId='+btn.getAttribute('data-id')+'&rAp='+rAp,'_blank');};});
+    [].forEach.call(area.querySelectorAll('.ml-ren'),function(btn){btn.onclick=function(){var id=btn.getAttribute('data-id'),nm=btn.getAttribute('data-name');var nn=prompt('Rename list:',nm);if(nn===null)return;nn=nn.trim();if(!nn||nn===nm)return;btn.disabled=true;fetch(base+'contentsGetList.php?'+new URLSearchParams({rAp:rAp,xreg:'101',listNo:id,newname:nn}).toString(),{credentials:'include'}).then(function(r){if(!r.ok)throw new Error('status '+r.status);toast('Renamed to “'+nn+'”');loadMyLists();}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;});};});
+    [].forEach.call(area.querySelectorAll('.ml-del'),function(btn){btn.onclick=function(){var id=btn.getAttribute('data-id'),nm=btn.getAttribute('data-name');if(!confirm('Delete list “'+nm+'”? This cannot be undone.'))return;btn.disabled=true;btn.textContent='…';fetch(base+'contentsGetList.php?'+new URLSearchParams({rAp:rAp,xreg:'102',listNo:id,confirmed:'1'}).toString(),{credentials:'include'}).then(function(r){if(!r.ok)throw new Error('status '+r.status);toast('Deleted “'+nm+'”');loadMyLists();}).catch(function(e){toast('Failed: '+e.message);btn.disabled=false;btn.textContent='Delete';});};});
+  }
+  function createList(name,btn){
+    if(btn){btn.disabled=true;btn.textContent='Creating…';}
+    fetch(base+'contentsGetList.php?'+new URLSearchParams({rAp:rAp,xreg:'380',isFolder:'0',copyList:'0'}).toString(),{credentials:'include'}).then(function(r){return r.text();}).then(function(h){
+      var d=new DOMParser().parseFromString(h,'text/html'); var np=(d.querySelector('input[name="newParent"]')||{}).value||(h.match(/newParent[^\d]{0,8}(\d+)/)||[])[1]||'';
+      return fetch(base+'contentsGetList.php?'+new URLSearchParams({rAp:rAp,xreg:'13',isFolder:'0',newname:name,newParent:np,copyList:'0'}).toString(),{credentials:'include'});
+    }).then(function(r){if(!r.ok)throw new Error('status '+r.status);toast('List “'+name+'” created');var inp=document.querySelector('#ts-mylists #ml-name');if(inp)inp.value='';if(btn){btn.disabled=false;btn.textContent='Create list';}loadMyLists();}).catch(function(e){toast('Failed: '+e.message);if(btn){btn.disabled=false;btn.textContent='Create list';}});
+  }
+
+  var R={classes:renderClasses,school:renderSchool,students:renderStudents,lists:renderLists,mylists:renderMyLists,seats:renderSeats,teachers:renderTeachers,notify:notifyCard,account:accountCard};
   var active=null, renderedSet={};
   function renderActive(){if(active&&R[active]){try{R[active]();}catch(e){var b=body(active);if(b)b.innerHTML='<div style="color:'+RED+'">Section error: '+e.message+'</div>';}}}
   function showSection(id){active=id;setActive(id);panelIds.forEach(function(pid){var el=document.getElementById('ts-'+pid);if(el)el.style.display=(pid===id?'block':'none');});if(!renderedSet[id]){renderedSet[id]=true;renderActive();}var sd=document.getElementById('tcr-side');if(sd)sd.classList.remove('open');var m=document.getElementById('tcr-main');if(m)m.scrollTop=0;}
